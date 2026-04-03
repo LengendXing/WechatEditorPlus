@@ -1,0 +1,8 @@
+frontend/node_modules/
+frontend/dist/
+**/__pycache__/
+*.pyc
+data/images/
+data/articles/
+data/config.json
+!data/.gitkeep
