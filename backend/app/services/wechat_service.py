@@ -119,11 +119,39 @@ def process_html_images(html: str, images_dir: str) -> str:
     return re.sub(r'src="([^"]+)"', replace_src, html)
 
 
+def _generate_default_cover(title: str) -> bytes:
+    """Generate a simple cover image with PIL when no cover is provided."""
+    from PIL import Image, ImageDraw, ImageFont
+    import io
+
+    img = Image.new("RGB", (900, 383), color=(30, 30, 30))
+    draw = ImageDraw.Draw(img)
+    # Simple centered title text
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
+        small_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
+    except (OSError, IOError):
+        font = ImageFont.load_default()
+        small_font = font
+
+    # Draw title (truncate if too long)
+    display_title = title[:20] + "..." if len(title) > 20 else title
+    bbox = draw.textbbox((0, 0), display_title, font=font)
+    tw = bbox[2] - bbox[0]
+    draw.text(((900 - tw) / 2, 150), display_title, fill=(240, 237, 230), font=font)
+
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return buf.getvalue()
+
+
 def create_draft(title: str, html: str, author: str = "", digest: str = "", thumb_media_id: str = "") -> dict:
     token = _get_access_token()
 
     if not thumb_media_id:
-        raise AppError(code=400, message="Draft requires a cover image (thumb_media_id)")
+        # Auto-generate a default cover
+        cover_bytes = _generate_default_cover(title)
+        thumb_media_id = upload_thumb_to_wechat(cover_bytes, "auto_cover.jpg")
 
     article = {
         "title": title,
