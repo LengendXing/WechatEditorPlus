@@ -57,9 +57,15 @@ export default function EditorPage() {
 
   const handleInsertImage = (url: string) => {
     if (!article) return;
-    const imgTag = `<img src="${url}" style="max-width:100%;" />`;
+    const imgTag = `<img src="${url}" style="max-width:100%;border-radius:8px;" />`;
     updateField("html", article.html + "\n" + imgTag);
   };
+
+  // 从预览可编辑区域同步回来的 HTML（此时已经是纯 HTML，替换掉原始内容）
+  const handlePreviewHtmlChange = useCallback((newHtml: string) => {
+    if (!article) return;
+    updateField("html", newHtml);
+  }, [article]);
 
   if (!article) {
     return (
@@ -135,6 +141,7 @@ export default function EditorPage() {
             css={previewCss}
             js={article.mode === "html" ? article.js : ""}
             mode={previewMode}
+            onHtmlChange={handlePreviewHtmlChange}
           />
         </div>
 
