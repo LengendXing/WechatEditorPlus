@@ -60,26 +60,9 @@ body {
 
 .raw-html-block {
   position: relative;
-  margin: 12px 0;
-  border-radius: 8px;
-  transition: outline 0.15s;
 }
 
-.raw-html-block:hover:not(.editing) {
-  outline: 1px dashed #A855F7;
-  outline-offset: 4px;
-}
-
-.raw-html-block.selected:not(.editing) {
-  outline: 2px solid #A855F7;
-  outline-offset: 4px;
-}
-
-.raw-html-block.editing {
-  outline: none;
-}
-
-.raw-html-block.editing *::selection {
+.raw-html-block *::selection {
   background: rgba(168, 85, 247, 0.3);
 }
 

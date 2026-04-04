@@ -42,75 +42,65 @@ function isComplexBlock(el: Element): boolean {
 /**
  * Prepare HTML for loading into TipTap editor.
  *
- * Strategy: break the article into the smallest possible independent blocks.
- * - A top-level wrapper section (with many child sections) gets "unwrapped" —
- *   each child section becomes its own RawHtmlBlock.
- * - Simple styled elements (single p, h1, etc. with style) also become RawHtmlBlocks.
- * - Plain text without style stays as TipTap-editable content.
+ * Strategy: wrap the entire HTML as a single RawHtmlBlock so it renders
+ * as one seamless article. The block is always contentEditable so users
+ * can click anywhere to edit text without visual deformation.
+ *
+ * Only SVG interactive blocks (with <style>/<input>) are wrapped separately
+ * so they are protected as atomic nodes.
  */
 export function prepareHTMLForEditor(html: string): string {
   if (!html.trim()) return html
 
   const doc = new DOMParser().parseFromString(html, 'text/html')
-  const result: string[] = []
+  const bodyHtml = doc.body.innerHTML.trim()
+  if (!bodyHtml) return html
 
+  // Check if there are interactive SVG blocks mixed with regular content
   const topElements = Array.from(doc.body.children)
+  const hasInteractive = topElements.some((el) =>
+    el.querySelector('style') ||
+    el.querySelector('input[type="checkbox"]') ||
+    el.querySelector('input[type="radio"]')
+  )
 
-  for (const el of topElements) {
-    // Check if this is a large wrapper section containing multiple child sections
-    const childSections = el.querySelectorAll(':scope > section')
+  if (hasInteractive) {
+    // Split: interactive blocks become separate atoms, rest stays as one block
+    const result: string[] = []
+    let normalBuffer: string[] = []
 
-    if (childSections.length > 1 && el.tagName.toLowerCase() === 'section') {
-      // Unwrap: each direct child becomes its own block
-      // But first, capture the wrapper's style to apply context (background etc.)
-      const wrapperStyle = el.getAttribute('style') || ''
-
-      for (const child of Array.from(el.children)) {
-        // Merge parent style context into each child for visual consistency
-        if (wrapperStyle && child instanceof HTMLElement) {
-          const existingStyle = child.getAttribute('style') || ''
-          // Only add wrapper styles that provide context (background, color, font)
-          const contextStyles = extractContextStyles(wrapperStyle)
-          if (contextStyles && !existingStyle.includes('background')) {
-            child.setAttribute('style', `${contextStyles}${existingStyle}`)
-          }
-        }
-
+    const flushNormal = () => {
+      if (normalBuffer.length > 0) {
+        const combined = normalBuffer.join('')
         const wrapper = doc.createElement('div')
         wrapper.setAttribute('data-type', 'raw-html-block')
-        wrapper.setAttribute('data-raw-content', (child as Element).outerHTML)
+        wrapper.setAttribute('data-raw-content', combined)
         result.push(wrapper.outerHTML)
+        normalBuffer = []
       }
-    } else if (isComplexBlock(el) || el.hasAttribute('style')) {
-      // Single complex block — wrap as atom
-      const wrapper = doc.createElement('div')
-      wrapper.setAttribute('data-type', 'raw-html-block')
-      wrapper.setAttribute('data-raw-content', el.outerHTML)
-      result.push(wrapper.outerHTML)
-    } else {
-      // Simple content — let TipTap handle it as editable
-      result.push(el.outerHTML)
     }
+
+    for (const el of topElements) {
+      const isInteractive = el.querySelector('style') ||
+        el.querySelector('input[type="checkbox"]') ||
+        el.querySelector('input[type="radio"]')
+      if (isInteractive) {
+        flushNormal()
+        const wrapper = doc.createElement('div')
+        wrapper.setAttribute('data-type', 'raw-html-block')
+        wrapper.setAttribute('data-raw-content', el.outerHTML)
+        result.push(wrapper.outerHTML)
+      } else {
+        normalBuffer.push(el.outerHTML)
+      }
+    }
+    flushNormal()
+    return result.join('\n')
   }
 
-  return result.join('\n')
-}
-
-/**
- * Extract context styles from a wrapper (background, color, font-family)
- * that children might need to inherit.
- */
-function extractContextStyles(style: string): string {
-  const contextProps = ['background', 'color', 'font-family', 'max-width', 'margin']
-  const parts: string[] = []
-
-  for (const prop of contextProps) {
-    const regex = new RegExp(`${prop}\\s*:[^;]+;?`, 'gi')
-    const match = style.match(regex)
-    if (match) {
-      parts.push(match[0].endsWith(';') ? match[0] : match[0] + ';')
-    }
-  }
-
-  return parts.join('')
+  // No interactive blocks — wrap everything as one seamless block
+  const wrapper = doc.createElement('div')
+  wrapper.setAttribute('data-type', 'raw-html-block')
+  wrapper.setAttribute('data-raw-content', bodyHtml)
+  return wrapper.outerHTML
 }
