@@ -12,8 +12,7 @@ interface WechatPreviewProps {
 function normalizeImageStyles(html: string): string {
   return html.replace(
     /<img\b([^>]*?)style="([^"]*)"([^>]*?)>/gi,
-    (match, before, style, after) => {
-      // 去掉 box-shadow，确保有 border-radius 和 max-width
+    (_match, before, style, after) => {
       let s = style
         .replace(/box-shadow:[^;]+;?/gi, "")
         .replace(/border-radius:[^;]+;?/gi, "");
@@ -22,7 +21,7 @@ function normalizeImageStyles(html: string): string {
     }
   ).replace(
     /<img\b(?![^>]*style=)([^>]*?)>/gi,
-    (match, attrs) => {
+    (_match, attrs) => {
       return `<img style="border-radius:8px;max-width:100%;"${attrs}>`;
     }
   );
@@ -30,74 +29,64 @@ function normalizeImageStyles(html: string): string {
 
 export default function WechatPreview({ html, css, js, mode, onHtmlChange }: WechatPreviewProps) {
   const editableRef = useRef<HTMLDivElement>(null);
+  const lastExternalHtml = useRef<string>("");
   const isUserEditing = useRef(false);
 
-  // 处理后的 HTML（图片圆角、无阴影）
   const processedHtml = useMemo(() => normalizeImageStyles(html), [html]);
 
-  // 同步外部 html 变化到 contenteditable（仅在非用户编辑时）
+  // 仅在外部 HTML 变化时（代码编辑器改了内容）才重设 innerHTML
+  // 用户在 contenteditable 里编辑时不触发，保留浏览器原生 undo 栈
   useEffect(() => {
-    if (mode === "wechat" && editableRef.current && !isUserEditing.current) {
+    if (mode !== "wechat" || !editableRef.current) return;
+    if (isUserEditing.current) return;
+
+    // 只有内容真正变了才更新 DOM
+    if (processedHtml !== lastExternalHtml.current) {
+      lastExternalHtml.current = processedHtml;
       editableRef.current.innerHTML = processedHtml;
     }
   }, [processedHtml, mode]);
 
-  // 用户编辑后同步回父组件
+  // 用户编辑 → 通知父组件保存，但不触发 React 重渲染到这个 div
   const handleInput = useCallback(() => {
     if (!editableRef.current || !onHtmlChange) return;
     isUserEditing.current = true;
-    onHtmlChange(editableRef.current.innerHTML);
-    // 短暂标记为用户编辑中，防止外部更新覆盖光标位置
-    setTimeout(() => { isUserEditing.current = false; }, 500);
+    const currentHtml = editableRef.current.innerHTML;
+    lastExternalHtml.current = currentHtml; // 同步，防止 useEffect 覆盖
+    onHtmlChange(currentHtml);
+    // 延迟重置标记，让 React 的 re-render 周期跑完
+    setTimeout(() => { isUserEditing.current = false; }, 1000);
   }, [onHtmlChange]);
 
-  // 处理粘贴：只粘贴纯文本或 HTML，不带外部格式
+  // 粘贴：保留 HTML 格式
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault();
     const htmlData = e.clipboardData.getData("text/html");
     const textData = e.clipboardData.getData("text/plain");
 
-    const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return;
-    sel.deleteFromDocument();
-
     if (htmlData) {
-      // 插入 HTML
-      const frag = document.createRange().createContextualFragment(normalizeImageStyles(htmlData));
-      sel.getRangeAt(0).insertNode(frag);
+      document.execCommand("insertHTML", false, normalizeImageStyles(htmlData));
     } else if (textData) {
-      // 纯文本
-      const textNode = document.createTextNode(textData);
-      sel.getRangeAt(0).insertNode(textNode);
+      document.execCommand("insertText", false, textData);
     }
-
-    // 移动光标到插入内容后面
-    sel.collapseToEnd();
     handleInput();
   }, [handleInput]);
 
-  // 处理图片拖拽进入
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    const files = e.dataTransfer.files;
-    if (files.length === 0) return;
-    // 让父组件的图片上传逻辑处理
-    // 这里不阻止默认行为，让浏览器自然处理
-  }, []);
-
-  // 处理按键：Enter 插入 <br> 而非 <div>
+  // Enter → <br>
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       document.execCommand("insertLineBreak");
       handleInput();
     }
+    // Ctrl+Z / Ctrl+Y 不拦截，让浏览器原生处理
   }, [handleInput]);
 
   // 原始预览模式：只读 iframe
   if (mode === "raw") {
     const srcDoc = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>${css}</style></head>
-<body style="margin:0;padding:16px;font-family:-apple-system,sans-serif;">${processedHtml}
+<body style="margin:0;padding:16px;font-family:-apple-system,sans-serif;">${normalizeImageStyles(html)}
 <script>${js}<\/script></body></html>`;
 
     return (
@@ -118,7 +107,7 @@ export default function WechatPreview({ html, css, js, mode, onHtmlChange }: Wec
     );
   }
 
-  // 微信预览模式：可编辑
+  // 微信预览模式：contenteditable，浏览器原生 undo/redo
   return (
     <div className="h-full flex flex-col">
       <div className="mx-auto w-full max-w-[414px] h-full border border-border rounded-xl overflow-hidden bg-white">
@@ -151,7 +140,6 @@ export default function WechatPreview({ html, css, js, mode, onHtmlChange }: Wec
           suppressContentEditableWarning
           onInput={handleInput}
           onPaste={handlePaste}
-          onDrop={handleDrop}
           onKeyDown={handleKeyDown}
           style={{
             height: "calc(100% - 24px)",
@@ -163,7 +151,6 @@ export default function WechatPreview({ html, css, js, mode, onHtmlChange }: Wec
             color: "#333",
             cursor: "text",
           }}
-          dangerouslySetInnerHTML={{ __html: processedHtml }}
         />
       </div>
     </div>
