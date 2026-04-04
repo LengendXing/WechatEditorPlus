@@ -1,34 +1,57 @@
 import { NodeViewWrapper } from '@tiptap/react'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 export default function RawHtmlBlockView({ node, updateAttributes, deleteNode, selected }: any) {
   const html = node.attrs.content || ''
   const [editing, setEditing] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
+  // Always keep DOM content in sync with node attribute (only when not editing)
+  useEffect(() => {
+    if (contentRef.current && !editing) {
+      contentRef.current.innerHTML = html
+    }
+  }, [html, editing])
+
+  const enterEditMode = useCallback(() => {
+    // Content is already in DOM via the useEffect above, just flip the flag
     setEditing(true)
+    // Focus the editable area after React re-render
+    setTimeout(() => contentRef.current?.focus(), 0)
   }, [])
 
-  const handleBlur = useCallback(() => {
+  const exitEditMode = useCallback(() => {
     if (contentRef.current) {
-      const newHtml = contentRef.current.innerHTML
-      updateAttributes({ content: newHtml })
+      updateAttributes({ content: contentRef.current.innerHTML })
     }
     setEditing(false)
   }, [updateAttributes])
 
-  // Prevent TipTap from handling keyboard events when editing inside block
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    enterEditMode()
+  }, [enterEditMode])
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (editing) {
       e.stopPropagation()
-      // Allow Ctrl+Z / Ctrl+Y for undo/redo inside the block
       if (e.key === 'Escape') {
-        handleBlur()
+        exitEditMode()
       }
     }
-  }, [editing, handleBlur])
+  }, [editing, exitEditMode])
+
+  // Prevent blur from firing when clicking toolbar buttons
+  const handleBlur = useCallback((e: React.FocusEvent) => {
+    // Check if focus moved to a child element (toolbar button etc)
+    const related = e.relatedTarget as Node | null
+    if (related && contentRef.current?.parentElement?.contains(related)) {
+      return
+    }
+    if (editing) {
+      exitEditMode()
+    }
+  }, [editing, exitEditMode])
 
   return (
     <NodeViewWrapper
@@ -39,7 +62,6 @@ export default function RawHtmlBlockView({ node, updateAttributes, deleteNode, s
         ref={contentRef}
         contentEditable={editing}
         suppressContentEditableWarning
-        dangerouslySetInnerHTML={editing ? undefined : { __html: html }}
         onDoubleClick={handleDoubleClick}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
@@ -52,7 +74,6 @@ export default function RawHtmlBlockView({ node, updateAttributes, deleteNode, s
           minHeight: '20px',
         }}
       />
-      {/* Toolbar: shown when selected but not editing */}
       {selected && !editing && (
         <div
           style={{
@@ -65,29 +86,21 @@ export default function RawHtmlBlockView({ node, updateAttributes, deleteNode, s
           }}
         >
           <button
-            onClick={(e) => { e.stopPropagation(); setEditing(true) }}
+            onClick={(e) => { e.stopPropagation(); enterEditMode() }}
+            onMouseDown={(e) => e.preventDefault()}
             style={{
-              background: '#A855F7',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '2px 8px',
-              fontSize: '12px',
-              cursor: 'pointer',
+              background: '#A855F7', color: '#fff', border: 'none',
+              borderRadius: '4px', padding: '2px 8px', fontSize: '12px', cursor: 'pointer',
             }}
           >
             编辑
           </button>
           <button
             onClick={deleteNode}
+            onMouseDown={(e) => e.preventDefault()}
             style={{
-              background: '#ef4444',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '2px 8px',
-              fontSize: '12px',
-              cursor: 'pointer',
+              background: '#ef4444', color: '#fff', border: 'none',
+              borderRadius: '4px', padding: '2px 8px', fontSize: '12px', cursor: 'pointer',
             }}
           >
             删除
@@ -97,14 +110,10 @@ export default function RawHtmlBlockView({ node, updateAttributes, deleteNode, s
       {editing && (
         <div
           style={{
-            position: 'absolute',
-            top: -28,
-            right: 0,
-            fontSize: '11px',
-            color: '#A855F7',
+            position: 'absolute', top: -28, right: 0,
+            fontSize: '11px', color: '#A855F7',
             background: 'rgba(168,85,247,0.1)',
-            padding: '2px 8px',
-            borderRadius: '4px',
+            padding: '2px 8px', borderRadius: '4px',
           }}
         >
           编辑中 · Esc 退出
