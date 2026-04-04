@@ -29,7 +29,6 @@ def _inline_css(html: str, css: str = "") -> str:
     result = transform(
         full,
         remove_classes=True,
-        remove_unknown_selectors=False,
         keep_style_tags=False,
         strip_important=False,
         cssutils_logging_level="CRITICAL",
