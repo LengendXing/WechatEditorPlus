@@ -180,9 +180,11 @@ docker compose up -d
 ```bash
 # 后端
 cd backend && pip install -r requirements.txt
+# 设置数据目录（默认路径是 Docker 容器内路径，本地需覆盖）
+export IMAGES_DIR=../data/images ARTICLES_DIR=../data/articles CONFIG_FILE=../data/config.json
 uvicorn app.main:app --reload --port 7071
 
-# 前端
+# 前端（新终端）
 cd frontend && npm install && npm run dev
 ```
 
