@@ -48,7 +48,6 @@ export default function ImageManager({ onInsert }: ImageManagerProps) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-fg-secondary">图片管理</span>
         <button onClick={handleUpload} className="p-1 rounded hover:bg-surface-tertiary text-fg-muted hover:text-fg-primary">
           <Upload size={14} />
         </button>

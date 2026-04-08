@@ -14,6 +14,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORIES: SvgTemplate["category"][] = ["click", "slide", "animation"];
 
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  click: "linear-gradient(135deg, #E8553A, #C9923E)",
+  slide: "linear-gradient(135deg, #3A9E7E, #6B7FBF)",
+  animation: "linear-gradient(135deg, #6B7FBF, #1a1a2e)",
+};
+
 export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
   const [expanded, setExpanded] = useState(true);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
@@ -55,7 +61,7 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
   };
 
   return (
-    <div className="border-t border-border">
+    <div className="border-t border-border-primary">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-1 px-4 py-2 text-xs font-medium text-fg-secondary hover:text-fg-primary transition-colors"
@@ -74,25 +80,32 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
                 <div className="text-[10px] uppercase tracking-wider text-fg-muted mb-1">
                   {CATEGORY_LABELS[cat]}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {templates.map((tpl) => (
-                    <div key={tpl.id}>
+                    <div key={tpl.id} className={`rounded-lg overflow-hidden border transition-colors ${activeTemplate === tpl.id ? "border-accent-border" : "border-border-secondary"}`}>
+                      {/* Gradient cover */}
                       <button
                         onClick={() =>
                           setActiveTemplate(activeTemplate === tpl.id ? null : tpl.id)
                         }
-                        className={`w-full text-left px-2 py-1.5 text-xs rounded transition-colors ${
-                          activeTemplate === tpl.id
-                            ? "bg-accent/20 text-accent"
-                            : "text-fg-secondary hover:bg-surface-tertiary"
-                        }`}
+                        className="w-full h-20 flex items-center justify-center rounded-t-lg"
+                        style={{ background: CATEGORY_GRADIENTS[cat] }}
                       >
-                        {tpl.name}
-                        <span className="text-fg-muted ml-1">— {tpl.description}</span>
+                        <span className="text-white text-sm font-semibold drop-shadow-sm">{tpl.name}</span>
                       </button>
+                      {/* Info & insert */}
+                      <div className="bg-surface-secondary px-2.5 py-2 flex items-center justify-between gap-2">
+                        <span className="text-xs text-fg-muted truncate">{tpl.description}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleInsert(tpl); }}
+                          className="shrink-0 px-2 py-1 bg-accent hover:bg-accent-hover text-white rounded text-[11px] font-medium transition-colors"
+                        >
+                          插入
+                        </button>
+                      </div>
 
                       {activeTemplate === tpl.id && (
-                        <div className="mt-1 ml-2 space-y-2 border-l-2 border-accent/30 pl-2">
+                        <div className="mt-1 ml-2 space-y-2 border-l-2 border-accent-border pl-2">
                           {tpl.fields.map((field) => {
                             const config = getConfig(tpl);
                             const value = config[field.key] ?? field.default;
@@ -108,7 +121,7 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
                                       updateConfig(tpl.id, field.key, e.target.value)
                                     }
                                     rows={2}
-                                    className="w-full bg-surface-primary border border-border rounded px-2 py-1 text-xs text-fg-primary outline-none focus:border-accent resize-none"
+                                    className="w-full bg-bg-primary border border-border-primary rounded px-2 py-1 text-xs text-fg-primary outline-none focus:border-accent resize-none"
                                   />
                                 ) : field.type === "color" ? (
                                   <div className="flex items-center gap-1">
@@ -118,7 +131,7 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
                                       onChange={(e) =>
                                         updateConfig(tpl.id, field.key, e.target.value)
                                       }
-                                      className="w-6 h-6 rounded border border-border cursor-pointer"
+                                      className="w-6 h-6 rounded border border-border-primary cursor-pointer"
                                     />
                                     <input
                                       type="text"
@@ -126,7 +139,7 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
                                       onChange={(e) =>
                                         updateConfig(tpl.id, field.key, e.target.value)
                                       }
-                                      className="flex-1 bg-surface-primary border border-border rounded px-2 py-1 text-xs text-fg-primary outline-none focus:border-accent"
+                                      className="flex-1 bg-bg-primary border border-border-primary rounded px-2 py-1 text-xs text-fg-primary outline-none focus:border-accent"
                                     />
                                   </div>
                                 ) : field.type === "number" ? (
@@ -140,7 +153,7 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
                                         parseFloat(e.target.value) || 0
                                       )
                                     }
-                                    className="w-full bg-surface-primary border border-border rounded px-2 py-1 text-xs text-fg-primary outline-none focus:border-accent"
+                                    className="w-full bg-bg-primary border border-border-primary rounded px-2 py-1 text-xs text-fg-primary outline-none focus:border-accent"
                                   />
                                 ) : (
                                   <input
@@ -149,7 +162,7 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
                                     onChange={(e) =>
                                       updateConfig(tpl.id, field.key, e.target.value)
                                     }
-                                    className="w-full bg-surface-primary border border-border rounded px-2 py-1 text-xs text-fg-primary outline-none focus:border-accent"
+                                    className="w-full bg-bg-primary border border-border-primary rounded px-2 py-1 text-xs text-fg-primary outline-none focus:border-accent"
                                   />
                                 )}
                               </div>
@@ -159,7 +172,7 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
                           <div className="flex gap-1 pt-1">
                             <button
                               onClick={() => handlePreview(tpl)}
-                              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-surface-tertiary hover:bg-border text-fg-secondary rounded text-[11px] transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-surface-tertiary hover:bg-border-primary text-fg-secondary rounded text-[11px] transition-colors"
                             >
                               <Eye size={11} /> 预览
                             </button>
@@ -172,7 +185,7 @@ export default function SvgTemplatePanel({ onInsert }: SvgTemplatePanelProps) {
                           </div>
 
                           {previewHtml && activeTemplate === tpl.id && (
-                            <div className="mt-2 border border-border rounded overflow-hidden bg-white">
+                            <div className="mt-2 border border-border-primary rounded overflow-hidden bg-white">
                               <div className="text-[10px] text-fg-muted px-2 py-1 bg-surface-tertiary">
                                 预览
                               </div>

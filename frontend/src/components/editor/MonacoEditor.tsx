@@ -1,4 +1,5 @@
 import Editor from "@monaco-editor/react";
+import { useTheme } from "@/hooks/useTheme";
 
 interface MonacoEditorProps {
   value: string;
@@ -8,17 +9,19 @@ interface MonacoEditorProps {
 }
 
 export default function MonacoEditor({ value, onChange, language, height = "100%" }: MonacoEditorProps) {
+  const { resolvedTheme } = useTheme();
+
   return (
     <Editor
       height={height}
       language={language}
       value={value}
       onChange={(v) => onChange(v ?? "")}
-      theme="vs-dark"
+      theme={resolvedTheme === "light" ? "light" : "vs-dark"}
       options={{
         minimap: { enabled: false },
         fontSize: 14,
-        fontFamily: "var(--font-mono)",
+        fontFamily: "'JetBrains Mono', monospace",
         lineNumbers: "on",
         wordWrap: "on",
         scrollBeyondLastLine: false,

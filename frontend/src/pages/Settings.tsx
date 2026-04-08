@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
+import SettingsHeader from "@/components/layout/SettingsHeader";
+import SettingsSidebar from "@/components/settings/SettingsSidebar";
+import WechatConfigSection from "@/components/settings/WechatConfigSection";
+import AppearanceSection from "@/components/settings/AppearanceSection";
+import EditorPreferencesSection from "@/components/settings/EditorPreferencesSection";
+import KeyboardShortcutsSection from "@/components/settings/KeyboardShortcutsSection";
+import AboutSection from "@/components/settings/AboutSection";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function Settings() {
   const [appid, setAppid] = useState("");
@@ -7,6 +15,8 @@ export default function Settings() {
   const [configured, setConfigured] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [activeSection, setActiveSection] = useState("wechat");
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     api.get("/config").then((res) => {
@@ -32,38 +42,41 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-8 max-w-lg mx-auto">
-      <h1 className="text-xl font-semibold mb-6">微信公众号配置</h1>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm text-fg-secondary mb-1">AppID</label>
-          <input
-            value={appid}
-            onChange={(e) => setAppid(e.target.value)}
-            className="w-full px-3 py-2 bg-surface-secondary border border-border rounded-lg text-sm text-fg-primary outline-none focus:border-accent"
-            placeholder="wx..."
-          />
-        </div>
-        <div>
-          <label className="block text-sm text-fg-secondary mb-1">AppSecret</label>
-          <input
-            value={appsecret}
-            onChange={(e) => setAppsecret(e.target.value)}
-            type="password"
-            className="w-full px-3 py-2 bg-surface-secondary border border-border rounded-lg text-sm text-fg-primary outline-none focus:border-accent"
-            placeholder={configured ? "已配置（输入新值覆盖）" : "输入 AppSecret"}
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={save}
-            disabled={saving}
-            className="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {saving ? "保存中..." : "保存"}
-          </button>
-          {msg && <span className="text-sm text-success">{msg}</span>}
-          {configured && <span className="text-xs text-fg-muted">&#10003; 已配置</span>}
+    <div className="h-full flex flex-col bg-bg-primary">
+      <SettingsHeader />
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar - 240px */}
+        <SettingsSidebar
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        />
+
+        {/* Main content */}
+        <div className="flex-1 overflow-y-auto px-12 py-8">
+          <div className="max-w-[600px] flex flex-col gap-6">
+            {activeSection === "wechat" && (
+              <WechatConfigSection
+                appid={appid}
+                appsecret={appsecret}
+                configured={configured}
+                saving={saving}
+                onAppidChange={setAppid}
+                onAppsecretChange={setAppsecret}
+                onSave={save}
+                message={msg}
+              />
+            )}
+            {activeSection === "appearance" && (
+              <AppearanceSection
+                theme={theme}
+                onThemeChange={setTheme}
+              />
+            )}
+            {activeSection === "editor" && <EditorPreferencesSection />}
+            {activeSection === "shortcuts" && <KeyboardShortcutsSection />}
+            {activeSection === "about" && <AboutSection />}
+          </div>
         </div>
       </div>
     </div>

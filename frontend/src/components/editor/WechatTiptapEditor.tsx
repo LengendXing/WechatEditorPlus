@@ -107,7 +107,7 @@ const WechatTiptapEditor = forwardRef<WechatTiptapEditorHandle, WechatTiptapEdit
             cursor: pointer;
           }
           .tiptap-editor .ProseMirror img:hover {
-            outline: 2px solid #A855F7;
+            outline: 2px solid #E8553A;
             outline-offset: 2px;
           }
           .tiptap-editor .ProseMirror *::selection {

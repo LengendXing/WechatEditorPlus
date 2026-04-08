@@ -10,7 +10,6 @@ export default function ThemeSelector({ value, onChange }: ThemeSelectorProps) {
 
   return (
     <div>
-      <span className="text-xs font-medium text-fg-secondary mb-2 block">Markdown 主题</span>
       <div className="space-y-1">
         {themes.map((t) => (
           <button

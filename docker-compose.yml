@@ -4,14 +4,14 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "7070:80"
+      - "7073:80"
     depends_on:
       - backend
 
   backend:
     build: ./backend
     ports:
-      - "7071:8000"
+      - "7072:8000"
     volumes:
       - ./data:/app/data
     environment:

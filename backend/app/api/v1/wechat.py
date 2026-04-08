@@ -19,6 +19,7 @@ async def get_config():
         "appid": config.get("appid", ""),
         "appsecret": "****" + config.get("appsecret", "")[-4:] if config.get("appsecret") else "",
         "configured": bool(config.get("appid") and config.get("appsecret")),
+        "account_name": config.get("account_name", ""),
     }
     return success(masked)
 

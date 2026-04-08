@@ -7,7 +7,7 @@ const WX_THEMES: Record<string, Record<string, string>> = {
     h2: "font-size:20px;font-weight:bold;margin:18px 0 8px;color:#333;border-bottom:1px solid #eee;padding-bottom:6px;",
     h3: "font-size:18px;font-weight:bold;margin:16px 0 6px;color:#333;",
     p: "margin:8px 0;line-height:1.8;font-size:16px;color:#333;",
-    blockquote: "border-left:4px solid #A855F7;padding:10px 16px;margin:12px 0;background:#f9f9f9;color:#666;",
+    blockquote: "border-left:4px solid #E8553A;padding:10px 16px;margin:12px 0;background:#f9f9f9;color:#666;",
     code_inline: "background:#f3f4f6;padding:2px 6px;border-radius:3px;font-size:14px;color:#e83e8c;font-family:Menlo,Monaco,monospace;",
     code_block: "background:#1e1e1e;padding:16px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.6;",
     a: "color:#576b95;text-decoration:none;",
