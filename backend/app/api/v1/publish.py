@@ -125,21 +125,28 @@ _INTERACTIVE_PATTERN = re.compile(
 
 
 def _estimate_svg_height(inner_html: str) -> int:
-    """Rough height estimate for SVG viewBox based on content."""
-    # Count major block elements (each ~40-60px)
-    blocks = len(re.findall(r'<(?:section|div|p|h[1-6]|label)\b', inner_html))
-    # Count images
-    images = len(re.findall(r'<img\b', inner_html))
-    # Pure text length (at ~16px font, ~35 chars per line at 580px, ~24px per line)
-    text = re.sub(r'<[^>]+>', '', inner_html).strip()
-    text_len = len(text)
-    text_lines = max(1, text_len // 30)
-    text_height = text_lines * 26
+    """Conservative height estimate — prefer too short over too tall.
 
-    # Heuristic: blocks contribute padding, text contributes line height
-    h = blocks * 20 + images * 250 + text_height + 40  # 40px base padding
-    h = max(150, min(h, 2000))
-    return h
+    We set overflow:visible on SVG+foreignObject so content won't be clipped
+    even if we underestimate. Too-tall estimates create ugly whitespace.
+    """
+    # Pure visible text
+    text = re.sub(r'<[^>]+>', '', inner_html).strip()
+    text = re.sub(r'\s+', ' ', text)
+    # ~35 CJK chars per line at 580px, ~28px per line
+    text_lines = max(1, len(text) // 35)
+    text_height = text_lines * 28
+
+    # Interactive chrome: buttons, labels, inputs add ~50px each
+    labels = len(re.findall(r'<label\b', inner_html))
+    chrome = labels * 50
+
+    # Padding/margins from sections
+    sections = len(re.findall(r'<section\b', inner_html))
+    padding = sections * 8
+
+    h = text_height + chrome + padding + 20  # 20px base
+    return max(120, min(h, 800))
 
 
 def _wrap_in_svg_foreignobject(inner_html: str) -> str:
@@ -160,8 +167,9 @@ def _wrap_in_svg_foreignobject(inner_html: str) -> str:
         f'<section style="width:100%;margin:16px 0;">'
         f'<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {vw} {height}" '
-        f'style="width:100%;background:transparent;">'
-        f'<foreignObject x="0" y="0" width="{vw}" height="{height}">'
+        f'style="width:100%;overflow:visible;background:transparent;">'
+        f'<foreignObject x="0" y="0" width="{vw}" height="{height}" '
+        f'style="overflow:visible;">'
         f'<div xmlns="http://www.w3.org/1999/xhtml" '
         f'style="width:{vw}px;font-family:-apple-system,BlinkMacSystemFont,'
         f"'PingFang SC','Hiragino Sans GB',sans-serif;"
