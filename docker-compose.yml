@@ -6,7 +6,8 @@ services:
     ports:
       - "7073:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
   backend:
     build: ./backend
@@ -19,3 +20,9 @@ services:
       - ARTICLES_DIR=/app/data/articles
       - CONFIG_FILE=/app/data/config.json
       - MAX_UPLOAD_SIZE=52428800
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/version')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
