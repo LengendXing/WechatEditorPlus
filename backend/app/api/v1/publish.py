@@ -12,6 +12,20 @@ from app.services import article_service, wechat_service
 
 router = APIRouter(prefix="/publish", tags=["publish"])
 
+# Base styles matching the preview iframe — ensures WYSIWYG between preview and publish
+_WECHAT_BASE_CSS = """
+section { margin: 0; padding: 0; }
+body, section.wechat-root {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #333;
+    word-wrap: break-word;
+    word-break: break-all;
+}
+img { border-radius: 8px; max-width: 100% !important; box-sizing: border-box; }
+"""
+
 
 class PublishDraftReq(BaseModel):
     article_id: str
@@ -67,10 +81,14 @@ def _inline_css(html: str, css: str = "") -> str:
         flags=re.DOTALL | re.IGNORECASE,
     )
 
-    # Merge and clean CSS from all sources
-    parts = [css.strip()] + [b.strip() for b in style_blocks]
+    # Merge and clean CSS from all sources (prepend base styles for WYSIWYG)
+    parts = [_WECHAT_BASE_CSS, css.strip()] + [b.strip() for b in style_blocks]
     all_css = "\n".join(p for p in parts if p)
     all_css = _strip_wechat_unsupported_css(all_css)
+
+    # Wrap in wechat-root section so body-level styles get inlined onto it
+    # (WeChat strips <body> tags, so styles must land on a wrapper element)
+    html_body = f'<section class="wechat-root">{html_body}</section>'
 
     if all_css.strip():
         html_body = f"<style>{all_css}</style>{html_body}"

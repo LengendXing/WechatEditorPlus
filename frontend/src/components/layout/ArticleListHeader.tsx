@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { Search, Plus } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, Plus, Settings } from "lucide-react";
 
 interface ArticleListHeaderProps {
   activeTab: string;
@@ -18,6 +18,8 @@ export default function ArticleListHeader({
   onSearchChange,
   onCreateNew,
 }: ArticleListHeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <header className="h-14 bg-surface-secondary border-b border-border-primary px-6 flex items-center shrink-0 relative">
       {/* Left: Logo */}
@@ -70,6 +72,15 @@ export default function ArticleListHeader({
         >
           <Plus size={14} />
           <span className="text-[13px] font-medium">新建文章</span>
+        </button>
+
+        {/* Settings */}
+        <button
+          onClick={() => navigate("/settings")}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-fg-muted hover:text-fg-primary hover:bg-surface-hover transition-colors"
+          title="设置"
+        >
+          <Settings size={16} />
         </button>
 
         {/* Avatar */}

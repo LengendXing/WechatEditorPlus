@@ -9,13 +9,13 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-一键部署-2496ED.svg)](docker-compose.yml)
 [![AI Agent](https://img.shields.io/badge/Agent-Claude_|_Codex_|_OpenClaw-8B5CF6.svg)](skill/mbeditor.skill.md)
-[![Version](https://img.shields.io/badge/Version-2.0-E8553A.svg)](https://github.com/AAAAAnson/mbeditor/releases/tag/v2.0)
+[![Version](https://img.shields.io/badge/Version-3.0-E8553A.svg)](https://github.com/AAAAAnson/mbeditor/releases/tag/v3.0)
 
 </div>
 
 ---
 
-![MBEditor 编辑器](docs/screenshots/editor-v2.png)
+![MBEditor 编辑器](docs/screenshots/editor-v3.png)
 
 ## 为什么做了这个
 
@@ -47,7 +47,7 @@
 
 **高度自定义排版**
 
-三种编辑模式 + 六种交互组件 + 无限自定义。HTML/CSS/JS 三栏编辑给你完全的排版控制权，Markdown 模式让你专注写作。
+三种编辑模式 + 丰富 HTML 排版组件 + 无限自定义。HTML/CSS/JS 三栏编辑给你完全的排版控制权，Markdown 模式让你专注写作。
 
 </td>
 </tr>
@@ -196,7 +196,7 @@ claude install-skill https://github.com/KKKKhazix/khazix-skills
 
 ## 编辑器功能
 
-![预览模式](docs/screenshots/preview-v2.png)
+![预览模式](docs/screenshots/preview-v3.png)
 
 ### 三种编辑模式
 
@@ -206,24 +206,24 @@ claude install-skill https://github.com/KKKKhazix/khazix-skills
 | **Markdown 模式** | 写作者 | 用最简洁的语法写作，多种排版主题自动渲染 |
 | **可视化编辑** | 所有人 | 所见即所得，在预览区直接编辑内容 |
 
-### 六种交互组件
+### HTML 排版组件
 
-内置纯 CSS 交互模板，无需 JavaScript，100% 微信公众号兼容：
+内置丰富的纯 inline style 排版组件，复制到公众号后完美还原：
 
-- **展开收起** — FAQ、隐藏内容，点击标题展开
-- **前后对比** — 支持纯文字、纯图片、图文混合三种对比模式
-- **翻牌卡片** — 正反两面，点击翻转，适合知识点展示
-- **滑动轮播** — 触摸滑动 + 指示器切换，原生 scroll-snap
-- **渐显文字** — 滚动进入视口时逐行淡入
-- **长按揭秘** — 长按查看隐藏内容
+- **标签徽章** — 彩色圆角标签，适合分类标记
+- **渐变卡片** — 深色渐变背景 + 亮色文字，适合重点强调
+- **数据看板** — 多列数字统计展示
+- **时间线** — 带节点的步骤流程图
+- **引用样式** — 侧边线引用 + 装饰引号
+- **对比表格** — 功能对比矩阵，适合产品介绍
 
 ### 发布能力
 
-- 一键复制富文本到剪贴板
+- 一键复制富文本到剪贴板（所见即所得，预览效果 = 发布效果）
 - 一键推送到微信公众号草稿箱
 - 自动将本地/外部图片上传到微信 CDN
 - 自动生成文章封面图
-- CSS 自动内联化，标签自动转换为微信兼容格式
+- CSS 自动内联化 + 基础排版样式注入，标签自动转换为微信兼容格式
 
 ## 排版示例
 
@@ -351,8 +351,8 @@ mbeditor/
 ├── frontend/              # React 19 + TypeScript + Tailwind 4
 │   └── src/
 │       ├── pages/         # 编辑器 / 文章列表 / 设置
-│       ├── components/    # Monaco 编辑器 / 预览 / 操作面板 / SVG 模板
-│       └── utils/         # Markdown 渲染 / HTML 提取 / SVG 模板引擎
+│       ├── components/    # Monaco 编辑器 / 预览 / 操作面板
+│       └── utils/         # Markdown 渲染 / HTML 提取 / CSS 内联
 ├── backend/               # FastAPI + Python
 │   └── app/
 │       ├── api/v1/        # REST API 路由

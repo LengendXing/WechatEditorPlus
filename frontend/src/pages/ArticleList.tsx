@@ -50,6 +50,128 @@ const SAMPLE_HTML = `<section style="max-width:100%;font-family:-apple-system,Bl
 
 <section style="height:1px;background:linear-gradient(90deg,transparent,#d4c9b8,transparent);margin:0 0 32px;"></section>
 
+<!-- HTML Showcase -->
+<section style="margin:0 0 32px;">
+  <section style="font-size:11px;color:#b8a99a;letter-spacing:3px;margin-bottom:8px;">HTML SHOWCASE</section>
+  <h2 style="font-size:20px;font-weight:600;color:#1a1714;margin:0 0 14px;">纯 HTML 排版效果展示</h2>
+  <p style="font-size:15px;color:#5c5650;margin:0 0 24px;">以下所有效果均为纯 inline style 实现，复制到公众号后完美还原，所见即所得。</p>
+
+  <!-- Colored Tags -->
+  <section style="margin:0 0 20px;">
+    <section style="font-size:12px;color:#b8a99a;margin-bottom:10px;letter-spacing:1px;">01 / 标签徽章</section>
+    <section style="display:flex;flex-wrap:wrap;gap:8px;">
+      <section style="display:inline-block;padding:4px 14px;background:#e8553a;color:#fff;border-radius:14px;font-size:12px;font-weight:500;">Hot</section>
+      <section style="display:inline-block;padding:4px 14px;background:#1a73e8;color:#fff;border-radius:14px;font-size:12px;font-weight:500;">New</section>
+      <section style="display:inline-block;padding:4px 14px;background:#0d9488;color:#fff;border-radius:14px;font-size:12px;font-weight:500;">AI Agent</section>
+      <section style="display:inline-block;padding:4px 14px;background:#c4a76c;color:#fff;border-radius:14px;font-size:12px;font-weight:500;">Open Source</section>
+      <section style="display:inline-block;padding:4px 14px;background:transparent;color:#8a7e6e;border-radius:14px;font-size:12px;font-weight:500;border:1px solid #d4c9b8;">MIT License</section>
+    </section>
+  </section>
+
+  <!-- Gradient Card -->
+  <section style="margin:0 0 20px;">
+    <section style="font-size:12px;color:#b8a99a;margin-bottom:10px;letter-spacing:1px;">02 / 渐变卡片</section>
+    <section style="border-radius:12px;padding:32px 24px;background:linear-gradient(135deg,#1a1714 0%,#3d3730 50%,#5c554c 100%);text-align:center;">
+      <section style="font-size:22px;font-weight:700;color:#f0ebe4;margin-bottom:8px;">Write Once, Publish Everywhere</section>
+      <section style="font-size:14px;color:#c4b5a0;line-height:1.7;">一次编写，自动处理图片上传、CSS 内联、格式兼容<br/>直接推送到微信公众号草稿箱</section>
+    </section>
+  </section>
+
+  <!-- Stats Grid -->
+  <section style="margin:0 0 20px;">
+    <section style="font-size:12px;color:#b8a99a;margin-bottom:10px;letter-spacing:1px;">03 / 数据看板</section>
+    <section style="display:flex;gap:12px;">
+      <section style="flex:1;padding:20px 16px;background:#faf8f5;border-radius:10px;border:1px solid #ece6dd;text-align:center;">
+        <section style="font-size:28px;font-weight:700;color:#e8553a;">3</section>
+        <section style="font-size:12px;color:#8a7e6e;margin-top:4px;">编辑模式</section>
+      </section>
+      <section style="flex:1;padding:20px 16px;background:#faf8f5;border-radius:10px;border:1px solid #ece6dd;text-align:center;">
+        <section style="font-size:28px;font-weight:700;color:#c4a76c;">100%</section>
+        <section style="font-size:12px;color:#8a7e6e;margin-top:4px;">开源免费</section>
+      </section>
+      <section style="flex:1;padding:20px 16px;background:#faf8f5;border-radius:10px;border:1px solid #ece6dd;text-align:center;">
+        <section style="font-size:28px;font-weight:700;color:#0d9488;">API</section>
+        <section style="font-size:12px;color:#8a7e6e;margin-top:4px;">AI 原生</section>
+      </section>
+    </section>
+  </section>
+
+  <!-- Timeline -->
+  <section style="margin:0 0 20px;">
+    <section style="font-size:12px;color:#b8a99a;margin-bottom:10px;letter-spacing:1px;">04 / 时间线</section>
+    <section style="padding-left:20px;border-left:2px solid #ece6dd;">
+      <section style="position:relative;padding:0 0 20px 20px;">
+        <section style="position:absolute;left:-27px;top:2px;width:12px;height:12px;border-radius:50%;background:#e8553a;border:2px solid #fff;"></section>
+        <section style="font-size:12px;color:#c4a76c;font-weight:600;margin-bottom:2px;">Step 1 · 创建</section>
+        <section style="font-size:14px;color:#5c5650;line-height:1.7;">选择 HTML 或 Markdown 模式，新建一篇文章</section>
+      </section>
+      <section style="position:relative;padding:0 0 20px 20px;">
+        <section style="position:absolute;left:-27px;top:2px;width:12px;height:12px;border-radius:50%;background:#c4a76c;border:2px solid #fff;"></section>
+        <section style="font-size:12px;color:#c4a76c;font-weight:600;margin-bottom:2px;">Step 2 · 编辑</section>
+        <section style="font-size:14px;color:#5c5650;line-height:1.7;">编写内容、插入图片，实时预览公众号效果</section>
+      </section>
+      <section style="position:relative;padding:0 0 20px 20px;">
+        <section style="position:absolute;left:-27px;top:2px;width:12px;height:12px;border-radius:50%;background:#0d9488;border:2px solid #fff;"></section>
+        <section style="font-size:12px;color:#c4a76c;font-weight:600;margin-bottom:2px;">Step 3 · 发布</section>
+        <section style="font-size:14px;color:#5c5650;line-height:1.7;">一键复制富文本 或 直接推送到公众号草稿箱</section>
+      </section>
+    </section>
+  </section>
+
+  <!-- Quote Styles -->
+  <section style="margin:0 0 20px;">
+    <section style="font-size:12px;color:#b8a99a;margin-bottom:10px;letter-spacing:1px;">05 / 引用样式</section>
+    <section style="padding:16px 20px;border-left:3px solid #c4a76c;background:#f7f5f0;border-radius:0 8px 8px 0;margin-bottom:12px;">
+      <section style="font-size:14px;color:#6b6158;line-height:1.8;"><strong style="color:#1a1714;">提示：</strong>好的排版不是让文字更花哨，而是让阅读更舒适。MBEditor 的设计理念是「少即是多」。</section>
+    </section>
+    <section style="padding:16px 20px;background:#faf8f5;border-radius:10px;border:1px solid #ece6dd;position:relative;">
+      <section style="font-size:32px;color:#d4c9b8;line-height:1;position:absolute;top:10px;left:16px;">"</section>
+      <section style="font-size:14px;color:#5c5650;line-height:1.8;padding-left:24px;font-style:italic;">工具应该隐于无形，让创作者全身心投入到内容本身。</section>
+    </section>
+  </section>
+
+  <!-- Feature Comparison Table -->
+  <section style="margin:0 0 20px;">
+    <section style="font-size:12px;color:#b8a99a;margin-bottom:10px;letter-spacing:1px;">06 / 对比表格</section>
+    <section style="border-radius:10px;overflow:hidden;border:1px solid #ece6dd;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr style="background:#3d3730;">
+          <td style="padding:12px 16px;color:#f0ebe4;font-weight:600;">特性</td>
+          <td style="padding:12px 16px;color:#f0ebe4;font-weight:600;text-align:center;">MBEditor</td>
+          <td style="padding:12px 16px;color:#f0ebe4;font-weight:600;text-align:center;">传统编辑器</td>
+        </tr>
+        <tr style="background:#faf8f5;">
+          <td style="padding:10px 16px;color:#5c5650;">AI Agent 支持</td>
+          <td style="padding:10px 16px;text-align:center;color:#0d9488;font-weight:600;">✓ 原生 API</td>
+          <td style="padding:10px 16px;text-align:center;color:#b8a99a;">✗</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 16px;color:#5c5650;">自定义 HTML</td>
+          <td style="padding:10px 16px;text-align:center;color:#0d9488;font-weight:600;">✓ 完全自由</td>
+          <td style="padding:10px 16px;text-align:center;color:#b8a99a;">受限</td>
+        </tr>
+        <tr style="background:#faf8f5;">
+          <td style="padding:10px 16px;color:#5c5650;">CLI 自动化</td>
+          <td style="padding:10px 16px;text-align:center;color:#0d9488;font-weight:600;">✓ RESTful</td>
+          <td style="padding:10px 16px;text-align:center;color:#b8a99a;">✗</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 16px;color:#5c5650;">私有化部署</td>
+          <td style="padding:10px 16px;text-align:center;color:#0d9488;font-weight:600;">✓ Docker</td>
+          <td style="padding:10px 16px;text-align:center;color:#b8a99a;">SaaS 依赖</td>
+        </tr>
+        <tr style="background:#faf8f5;">
+          <td style="padding:10px 16px;color:#5c5650;">开源</td>
+          <td style="padding:10px 16px;text-align:center;color:#0d9488;font-weight:600;">✓ MIT</td>
+          <td style="padding:10px 16px;text-align:center;color:#b8a99a;">闭源</td>
+        </tr>
+      </table>
+    </section>
+  </section>
+</section>
+
+<section style="height:1px;background:linear-gradient(90deg,transparent,#d4c9b8,transparent);margin:0 0 32px;"></section>
+
 <!-- CLI & Agent -->
 <section style="margin:0 0 32px;">
   <section style="font-size:11px;color:#b8a99a;letter-spacing:3px;margin-bottom:8px;">FOR DEVELOPERS</section>
@@ -72,152 +194,15 @@ const SAMPLE_HTML = `<section style="max-width:100%;font-family:-apple-system,Bl
 
 <section style="height:1px;background:linear-gradient(90deg,transparent,#d4c9b8,transparent);margin:0 0 32px;"></section>
 
-<!-- Interactive Templates -->
-<section style="margin:0 0 24px;">
-  <section style="font-size:11px;color:#b8a99a;letter-spacing:3px;margin-bottom:8px;">INTERACTIVE COMPONENTS</section>
-  <h2 style="font-size:20px;font-weight:600;color:#1a1714;margin:0 0 8px;">六种交互模板</h2>
-  <p style="font-size:14px;color:#8a7e6e;margin:0 0 24px;">所有效果基于纯 CSS 实现，无需 JavaScript，完美兼容微信内置浏览器。点击下方组件亲自体验。</p>
-</section>
-
-<!-- 1. Accordion -->
-<section style="margin:0 0 28px;">
-  <section style="font-size:12px;color:#b8a99a;margin-bottom:8px;letter-spacing:1px;">01 / 展开收起</section>
-  <section contenteditable="false" style="margin:0;">
-    <style>
-      #accS1:checked ~ .acc-bodyS1 { max-height:800px; opacity:1; }
-      #accS1:checked ~ .acc-lblS1 .acc-arrowS1 { transform:rotate(180deg); }
-      .acc-bodyS1 { max-height:0; opacity:0; overflow:hidden; transition:max-height 0.4s ease, opacity 0.3s ease; }
-      .acc-arrowS1 { transition:transform 0.3s ease; display:inline-block; }
-    </style>
-    <input type="checkbox" id="accS1" style="display:none;" />
-    <label for="accS1" class="acc-lblS1" style="display:block;padding:14px 18px;background:#3d3730;color:#f0ebe4;font-size:15px;font-weight:500;border-radius:8px 8px 0 0;cursor:pointer;">
-      MBEditor 的核心优势是什么？ <span class="acc-arrowS1" style="float:right;">▾</span>
-    </label>
-    <section class="acc-bodyS1" style="background:#faf8f5;padding:0 18px;border-radius:0 0 8px 8px;border:1px solid #e8e2d9;border-top:none;">
-      <section style="padding:14px 0;font-size:14px;line-height:1.9;color:#5c5650;">完整的 RESTful API 让 AI Agent 可直接调用；三种编辑模式灵活适配不同场景；内置交互组件让排版更生动；一键推送公众号草稿箱，图片自动上传处理。</section>
-    </section>
-  </section>
-</section>
-
-<!-- 2. Before/After -->
-<section style="margin:0 0 28px;">
-  <section style="font-size:12px;color:#b8a99a;margin-bottom:8px;letter-spacing:1px;">02 / 前后对比</section>
-  <section contenteditable="false" style="margin:0;position:relative;">
-    <style>
-      #baS2:checked ~ .ba-wrapS2 .ba-afterS2 { opacity:1; }
-      #baS2:checked ~ .ba-wrapS2 .ba-beforeS2 { opacity:0; }
-      #baS2:checked ~ .ba-btnS2 { background:#3d3730; }
-      .ba-beforeS2, .ba-afterS2 { transition:opacity 0.5s ease; }
-      .ba-afterS2 { opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; }
-    </style>
-    <input type="checkbox" id="baS2" style="display:none;" />
-    <section class="ba-wrapS2" style="position:relative;overflow:hidden;border-radius:8px;">
-      <section class="ba-beforeS2" style="background:#f0ebe4;padding:36px 24px;text-align:center;font-size:16px;font-weight:500;color:#5c5650;">手动排版 · 反复调整 · 复制粘贴</section>
-      <section class="ba-afterS2" style="background:#3d3730;padding:36px 24px;text-align:center;font-size:16px;font-weight:500;color:#f0ebe4;display:flex;align-items:center;justify-content:center;">AI 生成 · 一键排版 · 直接发布</section>
-    </section>
-    <label for="baS2" class="ba-btnS2" style="display:block;margin-top:8px;padding:10px 0;text-align:center;background:#c4a76c;color:#fff;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;transition:background 0.3s;letter-spacing:1px;">点击切换对比</label>
-  </section>
-</section>
-
-<!-- 3. Flip Card -->
-<section style="margin:0 0 28px;">
-  <section style="font-size:12px;color:#b8a99a;margin-bottom:8px;letter-spacing:1px;">03 / 翻牌卡片</section>
-  <section contenteditable="false" style="margin:0 auto;perspective:800px;width:280px;max-width:100%;position:relative;">
-    <style>
-      #flipS3:checked ~ .flip-innerS3 { transform:rotateY(180deg); }
-      .flip-innerS3 { position:relative;width:100%;height:180px;transition:transform 0.6s;transform-style:preserve-3d;cursor:pointer; }
-      .flip-frontS3, .flip-backS3 { position:absolute;width:100%;height:100%;-webkit-backface-visibility:hidden;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:15px;line-height:1.6;padding:20px;box-sizing:border-box;text-align:center; }
-      .flip-backS3 { transform:rotateY(180deg); }
-    </style>
-    <input type="checkbox" id="flipS3" style="display:none;" />
-    <label for="flipS3" style="display:block;position:absolute;width:100%;height:180px;cursor:pointer;z-index:2;"></label>
-    <section class="flip-innerS3">
-      <section class="flip-frontS3" style="background:#3d3730;color:#f0ebe4;">点击卡片<br/>查看背面</section>
-      <section class="flip-backS3" style="background:linear-gradient(135deg,#c4a76c,#a08850);color:#fff;">MBEditor<br/>让排版更优雅</section>
-    </section>
-  </section>
-</section>
-
-<!-- 4. Carousel -->
-<section style="margin:0 0 28px;">
-  <section style="font-size:12px;color:#b8a99a;margin-bottom:8px;letter-spacing:1px;">04 / 滑动轮播</section>
-  <section contenteditable="false" style="margin:0;border-radius:10px;overflow:hidden;">
-    <style>
-      .car-trackS4 { display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;scroll-behavior:smooth; }
-      .car-trackS4::-webkit-scrollbar { display:none; }
-      .car-dotsS4 label { display:inline-block;width:8px;height:8px;border-radius:50%;background:#d4c9b8;margin:0 4px;cursor:pointer;transition:background 0.3s; }
-      #car1S4:checked ~ .car-dotsS4 label[for="car1S4"],
-      #car2S4:checked ~ .car-dotsS4 label[for="car2S4"],
-      #car3S4:checked ~ .car-dotsS4 label[for="car3S4"] { background:#3d3730; }
-    </style>
-    <input type="radio" name="carS4" id="car1S4" checked style="display:none;" />
-    <input type="radio" name="carS4" id="car2S4" style="display:none;" />
-    <input type="radio" name="carS4" id="car3S4" style="display:none;" />
-    <section class="car-trackS4" id="carTrackS4">
-      <section id="carSlide1S4" style="scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box;padding:36px 24px;text-align:center;font-size:16px;font-weight:500;color:#f0ebe4;min-height:130px;display:flex;align-items:center;justify-content:center;background:#3d3730;">创建 — 选择模式，开始写作</section>
-      <section id="carSlide2S4" style="scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box;padding:36px 24px;text-align:center;font-size:16px;font-weight:500;color:#f0ebe4;min-height:130px;display:flex;align-items:center;justify-content:center;background:#5c554c;">排版 — 选择主题，插入组件</section>
-      <section id="carSlide3S4" style="scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box;padding:36px 24px;text-align:center;font-size:16px;font-weight:500;color:#f0ebe4;min-height:130px;display:flex;align-items:center;justify-content:center;background:#c4a76c;">发布 — 一键推送到公众号</section>
-    </section>
-    <section class="car-dotsS4" style="text-align:center;padding:12px 0;background:#faf8f5;">
-      <label for="car1S4" onclick="document.getElementById('carSlide1S4').scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'})"></label>
-      <label for="car2S4" onclick="document.getElementById('carSlide2S4').scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'})"></label>
-      <label for="car3S4" onclick="document.getElementById('carSlide3S4').scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'})"></label>
-    </section>
-  </section>
-</section>
-
-<!-- 5. Fade-in Text -->
-<section style="margin:0 0 28px;">
-  <section style="font-size:12px;color:#b8a99a;margin-bottom:8px;letter-spacing:1px;">05 / 渐显文字</section>
-  <section contenteditable="false" style="margin:0;padding:20px 0;" id="fiWrapS5">
-    <style>
-      @keyframes fadeInS5 { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-      .fi-lineS5 { opacity:0; font-size:16px; line-height:2.2; color:#3d3730; }
-      .fi-lineS5.fi-visibleS5 { animation:fadeInS5 0.6s ease forwards; }
-    </style>
-    <section class="fi-lineS5" style="animation-delay:0s;">API 驱动，天然适配 AI Agent</section>
-    <section class="fi-lineS5" style="animation-delay:0.4s;">六种交互模板，纯 CSS 实现</section>
-    <section class="fi-lineS5" style="animation-delay:0.8s;">一键发布，图片自动上传</section>
-    <script>
-    (function(){
-      var w=document.getElementById('fiWrapS5');if(!w)return;
-      var l=w.querySelectorAll('.fi-lineS5');
-      if('IntersectionObserver' in window){
-        new IntersectionObserver(function(e,o){e.forEach(function(x){if(x.isIntersecting){l.forEach(function(i){i.classList.add('fi-visibleS5')});o.disconnect();}});},{threshold:0.2}).observe(w);
-      } else { l.forEach(function(i){i.classList.add('fi-visibleS5')}); }
-    })();
-    <\/script>
-  </section>
-</section>
-
-<!-- 6. Press Reveal -->
-<section style="margin:0 0 28px;">
-  <section style="font-size:12px;color:#b8a99a;margin-bottom:8px;letter-spacing:1px;">06 / 长按揭秘</section>
-  <section contenteditable="false" style="margin:0;">
-    <style>
-      .pr-wrapS6 { position:relative;padding:28px 20px;background:#faf8f5;border:1px solid #e8e2d9;border-radius:10px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none; }
-      .pr-coverS6 { font-size:14px;color:#b8a99a;transition:opacity 0.3s; }
-      .pr-hiddenS6 { position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;font-size:14px;line-height:1.8;color:#3d3730;opacity:0;transition:opacity 0.3s;background:#faf8f5;border-radius:10px; }
-      .pr-wrapS6:active .pr-coverS6 { opacity:0; }
-      .pr-wrapS6:active .pr-hiddenS6 { opacity:1; }
-    </style>
-    <section class="pr-wrapS6">
-      <section class="pr-coverS6">长按此处，查看隐藏内容</section>
-      <section class="pr-hiddenS6">MBEditor 完全开源，MIT 协议发布</section>
-    </section>
-  </section>
-</section>
-
-<section style="height:1px;background:linear-gradient(90deg,transparent,#d4c9b8,transparent);margin:8px 0 24px;"></section>
-
 <!-- Quick Start -->
 <section style="margin:0 0 32px;">
   <section style="font-size:11px;color:#b8a99a;letter-spacing:3px;margin-bottom:8px;">QUICK START</section>
   <h2 style="font-size:20px;font-weight:600;color:#1a1714;margin:0 0 14px;">三行命令，开始使用</h2>
   <section style="background:#1c1b1a;border-radius:10px;padding:18px 20px;font-family:'SF Mono',Menlo,Monaco,monospace;font-size:12px;line-height:2;color:#a09888;overflow-x:auto;">
-    <section>git clone https://github.com/AAAAnson/MBEditor.git</section>
-    <section>cd MBEditor && docker compose up -d</section>
-    <section style="color:#6b8e6b;"># 打开 http://localhost:7073 开始创作</section>
+    <section>git clone github.com/.../MBEditor</section>
+    <section>cd MBEditor</section>
+    <section>docker compose up -d</section>
+    <section style="color:#6b8e6b;"># 访问 localhost:7073</section>
   </section>
 </section>
 
@@ -229,22 +214,13 @@ const SAMPLE_HTML = `<section style="max-width:100%;font-family:-apple-system,Bl
 
 </section>`;
 
-const SAMPLE_CSS = `/* MBEditor 示例样式 — 注入到预览 <style> */
-
-/* 卡片 hover 微动效 */
-section[style*="faf8f5"][style*="border-radius:10px"] {
-  transition: box-shadow 0.2s ease;
-}
-section[style*="faf8f5"][style*="border-radius:10px"]:hover {
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-}
+const SAMPLE_CSS = `/* MBEditor 示例样式 */
 
 /* 代码块选中色 */
 ::selection { background: rgba(196,167,108,0.2); }
 
 /* 链接样式 */
-a { color: #c4a76c; text-decoration: none; border-bottom: 1px solid rgba(196,167,108,0.3); }
-a:hover { border-bottom-color: #c4a76c; }`;
+a { color: #c4a76c; text-decoration: none; border-bottom: 1px solid rgba(196,167,108,0.3); }`;
 
 const SAMPLE_JS = `// MBEditor 示例脚本 — 仅用于本地预览增强（微信公众号不支持 JS）
 
@@ -279,7 +255,7 @@ const SAMPLE_MARKDOWN = [
   "| **CLI 集成** | RESTful API，命令行直接操作 |",
   "| **AI Agent** | Claude Code / GPT 等 Agent 直接调用 |",
   "| **一键发布** | 推送公众号草稿箱，自动处理图片 |",
-  "| **交互组件** | 6 种纯 CSS 交互模板 |",
+  "| **HTML 排版** | 纯 inline style 丰富组件 |",
   "| **主题系统** | 多种排版主题可选 |",
   "",
   "---",
@@ -328,7 +304,7 @@ const SAMPLE_MARKDOWN = [
   "### 无序列表",
   "",
   "- 支持图片上传和管理",
-  "- 支持 SVG 交互组件",
+  "- 支持自定义 HTML 排版组件",
   "- 支持深色/浅色主题",
   "- 支持 Docker 一键部署",
   "- 完全开源，MIT 协议",
@@ -361,13 +337,13 @@ const SAMPLE_MARKDOWN = [
   "",
   "MBEditor 支持以下 **高级功能**：",
   "",
-  "1. **交互组件**",
-  "   - 手风琴（展开/收起）",
-  "   - 翻牌效果",
-  "   - 轮播卡片",
-  "   - 渐显文字",
-  "   - 长按显示",
-  "   - 前后对比",
+  "1. **排版组件**",
+  "   - 标签徽章",
+  "   - 渐变卡片",
+  "   - 数据看板",
+  "   - 时间线",
+  "   - 引用样式",
+  "   - 对比表格",
   "",
   "2. **发布选项**",
   "   - 自动上传本地图片到微信",
@@ -376,18 +352,18 @@ const SAMPLE_MARKDOWN = [
   "",
   "---",
   "",
-  "## SVG 交互组件",
+  "## HTML 排版组件",
   "",
-  "MBEditor 内置 **6 种交互模板**，全部基于纯 CSS 实现：",
+  "MBEditor 的 HTML 模式支持丰富的纯 inline style 排版组件：",
   "",
-  "1. **点击展开/收起** — 手风琴效果，适合 FAQ 类内容",
-  "2. **前后对比** — 切换展示两段内容，适合效果对比",
-  "3. **翻牌效果** — 卡片翻转，适合知识点展示",
-  "4. **多页轮播** — 指示器切换卡片，适合分步说明",
-  "5. **渐显文字** — 文字逐行淡入，适合重点强调",
-  "6. **长按显示** — 长按查看隐藏内容，增加趣味性",
+  "1. **标签徽章** — 彩色圆角标签，适合分类标记",
+  "2. **渐变卡片** — 深色渐变背景 + 亮色文字，适合重点强调",
+  "3. **数据看板** — 多列数字统计展示",
+  "4. **时间线** — 带节点的步骤流程图",
+  "5. **引用样式** — 侧边线引用 + 装饰引号",
+  "6. **对比表格** — 功能对比矩阵，适合产品介绍",
   "",
-  "> 这些交互组件可以在左侧「SVG 交互模板」面板中直接插入，支持自定义文字、颜色等参数。",
+  "> 所有排版组件使用纯 inline style，复制到公众号后完美还原，无需额外处理。",
   "",
   "---",
   "",
