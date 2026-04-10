@@ -1,4 +1,5 @@
 import { usePlatform } from "@/hooks/usePlatform";
+import { WORD_COUNT_TOOLTIP } from "@/utils/wordCount";
 
 interface CommandBarProps {
   wordCount: number;
@@ -36,7 +37,7 @@ export default function CommandBar({ wordCount, saved }: CommandBarProps) {
       {/* Right side */}
       <div className="flex items-center gap-3.5 text-[10px] text-fg-muted font-mono">
         <span>100%</span>
-        <span>{wordCount.toLocaleString()} 字</span>
+        <span title={WORD_COUNT_TOOLTIP}>{wordCount.toLocaleString()} 字</span>
         <div className="flex items-center gap-1.5">
           <div
             className={`w-1.5 h-1.5 rounded-full ${

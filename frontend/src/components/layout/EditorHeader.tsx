@@ -12,8 +12,8 @@ interface EditorHeaderProps {
 
 const viewModes = [
   { key: "code" as const, label: "代码", icon: Code },
-  { key: "split" as const, label: "可视化", icon: LayoutGrid },
-  { key: "preview" as const, label: "分屏", icon: Columns2 },
+  { key: "split" as const, label: "分屏", icon: LayoutGrid },
+  { key: "preview" as const, label: "预览", icon: Columns2 },
 ];
 
 export default function EditorHeader({

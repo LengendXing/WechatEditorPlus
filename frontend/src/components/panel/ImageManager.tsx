@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Upload, Copy, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Upload, Copy, Trash2, Plus } from "lucide-react";
 import api from "@/lib/api";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import type { ImageRecord } from "@/types";
@@ -11,6 +11,7 @@ interface ImageManagerProps {
 export default function ImageManager({ onInsert }: ImageManagerProps) {
   const [images, setImages] = useState<ImageRecord[]>([]);
   const { upload } = useImageUpload();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = () => {
     api.get("/images").then((res) => {
@@ -20,20 +21,17 @@ export default function ImageManager({ onInsert }: ImageManagerProps) {
 
   useEffect(() => { load(); }, []);
 
-  const handleUpload = async () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const record = await upload(file);
-      if (record) {
-        load();
-        onInsert(`/images/${record.path}`);
-      }
-    };
-    input.click();
+  const handleUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      await upload(file);
+    }
+    load();
+    e.target.value = "";
   };
 
   const copyUrl = (path: string) => {
@@ -48,7 +46,12 @@ export default function ImageManager({ onInsert }: ImageManagerProps) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <button onClick={handleUpload} className="p-1 rounded hover:bg-surface-tertiary text-fg-muted hover:text-fg-primary">
+        <button
+          onClick={handleUpload}
+          aria-label="上传图片"
+          title="上传图片"
+          className="p-1 rounded hover:bg-surface-tertiary text-fg-muted hover:text-fg-primary"
+        >
           <Upload size={14} />
         </button>
       </div>
@@ -57,15 +60,42 @@ export default function ImageManager({ onInsert }: ImageManagerProps) {
           <div key={img.id} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-tertiary text-xs group">
             <img src={`/images/${img.path}`} className="w-8 h-8 rounded object-cover bg-surface-tertiary" alt="" />
             <span className="flex-1 truncate text-fg-secondary">{img.filename}</span>
-            <button onClick={() => copyUrl(img.path)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-accent">
+            <button
+              onClick={() => onInsert(`/images/${img.path}`)}
+              aria-label="插入到光标位置"
+              title="插入到光标位置"
+              className="opacity-0 group-hover:opacity-100 p-1 hover:text-accent"
+            >
+              <Plus size={12} />
+            </button>
+            <button
+              onClick={() => copyUrl(img.path)}
+              aria-label="复制图片链接"
+              title="复制图片链接"
+              className="opacity-0 group-hover:opacity-100 p-1 hover:text-accent"
+            >
               <Copy size={12} />
             </button>
-            <button onClick={() => deleteImage(img.id)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-error">
+            <button
+              onClick={() => deleteImage(img.id)}
+              aria-label="删除图片"
+              title="删除图片"
+              className="opacity-0 group-hover:opacity-100 p-1 hover:text-error"
+            >
               <Trash2 size={12} />
             </button>
           </div>
         ))}
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+        aria-hidden="true"
+      />
     </div>
   );
 }

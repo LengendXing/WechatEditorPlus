@@ -12,10 +12,12 @@ from app.services import article_service, wechat_service
 
 router = APIRouter(prefix="/publish", tags=["publish"])
 
-# Base styles matching the preview iframe — ensures WYSIWYG between preview and publish
+# Base styles matching the preview iframe — ensures WYSIWYG between preview and publish.
+# Use SINGLE quotes for font names so merged inline styles stay valid inside style="..."
+# attributes (nested double quotes break HTML parsing; see _single_to_double_quoted_style).
 _WECHAT_BASE_CSS = """
 body, section.wechat-root {
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
     font-size: 16px;
     line-height: 1.8;
     color: #333;
@@ -264,8 +266,15 @@ def _sanitize_for_wechat(html: str) -> str:
     html = re.sub(r'<div\b', '<section', html)
     html = re.sub(r'</div>', '</section>', html)
 
-    # ---- normalize quotes: premailer may output style='...' (single quotes) ---
-    html = re.sub(r"style='([^']*)'", r'style="\1"', html)
+    # ---- normalize quotes: premailer may output style='...' (single quotes).
+    # Must escape any inner double quotes to &quot; before swapping the wrapper,
+    # otherwise values like font-family:"PingFang SC","Hiragino Sans GB" get
+    # torn into fake attributes (pingfang="" sc"="" ...) by the HTML parser. ---
+    def _single_to_double_quoted_style(m: re.Match) -> str:
+        inner = m.group(1).replace('"', '&quot;')
+        return f'style="{inner}"'
+
+    html = re.sub(r"style='([^']*)'", _single_to_double_quoted_style, html)
 
     # ---- remove empty decorative absolute-positioned elements -----------------
     html = re.sub(
@@ -301,8 +310,10 @@ def _sanitize_for_wechat(html: str) -> str:
         # cursor (useless on mobile)
         s = re.sub(r'cursor\s*:[^;]+;?\s*', '', s)
 
-        # tidy up
-        s = re.sub(r';\s*;+', ';', s).strip().strip(';').strip()
+        # tidy up — collapse consecutive `;` but DON'T eat the `;` that
+        # terminates an HTML entity like `&quot;`. Negative lookbehind
+        # excludes cases where the `;` is actually entity-terminating.
+        s = re.sub(r'(?<!&quot);\s*;+', ';', s).strip().strip(';').strip()
         return f'style="{s}"' if s else ''
 
     html = re.sub(r'style="([^"]*)"', _fix_style, html)
@@ -356,6 +367,37 @@ async def process_article(req: PublishDraftReq):
     article = article_service.get_article(req.article_id)
     processed = _process_for_wechat(article.get("html", ""), article.get("css", ""))
     processed = wechat_service.process_html_images(processed, settings.IMAGES_DIR)
+    return success({"html": processed})
+
+
+def _process_for_copy_sync(html: str, css: str) -> str:
+    """Synchronous helper: inline CSS + upload local images to WeChat CDN."""
+    # Ensure WeChat is configured before doing any work so we fail fast.
+    config = wechat_service.load_config()
+    if not config.get("appid") or not config.get("appsecret"):
+        from app.core.exceptions import AppError
+        raise AppError(
+            code=400,
+            message="未配置微信 AppID/Secret，无法上传图片",
+        )
+    processed = _process_for_wechat(html, css)
+    processed = wechat_service.process_html_images(processed, settings.IMAGES_DIR)
+    return processed
+
+
+@router.post("/process-for-copy")
+async def process_for_copy(req: PreviewReq):
+    """Inline CSS and upload local images to WeChat CDN for clipboard copy.
+
+    Takes raw HTML+CSS (no article_id needed) so the frontend can call this
+    directly with the current editor state. Returns HTML whose <img src>
+    attributes point to mmbiz.qpic.cn URLs, ready to paste into the WeChat
+    editor.
+    """
+    loop = asyncio.get_event_loop()
+    processed = await loop.run_in_executor(
+        None, _process_for_copy_sync, req.html, req.css
+    )
     return success({"html": processed})
 
 

@@ -5,7 +5,7 @@ import MonacoEditor, { type MonacoEditorHandle } from "@/components/editor/Monac
 import MarkdownEditor from "@/components/editor/MarkdownEditor";
 import EditorTabs from "@/components/editor/EditorTabs";
 import WechatPreview from "@/components/preview/WechatPreview";
-import type { WechatPreviewHandle } from "@/components/preview/WechatPreview";
+import FullScreenPreviewModal from "@/components/preview/FullScreenPreviewModal";
 import ActionPanel from "@/components/panel/ActionPanel";
 import ThemeSelector from "@/components/panel/ThemeSelector";
 import SvgTemplatePanel from "@/components/panel/SvgTemplatePanel";
@@ -15,6 +15,9 @@ import PublishModal from "@/components/ui/PublishModal";
 import EditorHeader from "@/components/layout/EditorHeader";
 import { renderMarkdown } from "@/utils/markdown";
 import { extractHTML } from "@/utils/extractor";
+import { normalizeEditableHtml } from "@/utils/htmlSemantics";
+import { getWordCount, WORD_COUNT_TOOLTIP } from "@/utils/wordCount";
+import { useImageUpload } from "@/hooks/useImageUpload";
 import api from "@/lib/api";
 import type { Article } from "@/types";
 
@@ -38,12 +41,13 @@ export default function EditorPage() {
   const [saved, setSaved] = useState(true);
   const [publishOpen, setPublishOpen] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previewRef = useRef<WechatPreviewHandle>(null);
   const htmlEditorRef = useRef<MonacoEditorHandle>(null);
   const mdEditorRef = useRef<MonacoEditorHandle>(null);
   const processTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstProcess = useRef(true);
   const [processedHtml, setProcessedHtml] = useState("");
+  const { upload } = useImageUpload();
+  const [fullPreviewOpen, setFullPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -77,55 +81,80 @@ export default function EditorPage() {
     autoSave(updated);
   };
 
-  const handleInsertImage = (url: string) => {
-    if (!article) return;
-    const imgTag = `<img src="${url}" style="max-width:100%;border-radius:8px;" />`;
-    if (article.mode === "markdown") {
-      if (mdEditorRef.current) {
-        mdEditorRef.current.insertAtCursor("\n\n" + imgTag + "\n");
+  const handleInsertImage = useCallback(
+    (url: string) => {
+      if (!article) return;
+      const imgTag = `<img src="${url}" style="max-width:100%;border-radius:8px;" />`;
+      if (article.mode === "markdown") {
+        if (mdEditorRef.current) {
+          mdEditorRef.current.insertAtCursor("\n\n" + imgTag + "\n");
+        } else {
+          updateField("markdown", article.markdown + "\n\n" + imgTag + "\n");
+        }
       } else {
-        updateField("markdown", article.markdown + "\n\n" + imgTag + "\n");
+        // HTML 模式：只有在 HTML tab 且 editor 可用时才走光标插入
+        if (activeTab === "html" && htmlEditorRef.current) {
+          htmlEditorRef.current.insertAtCursor("\n" + imgTag + "\n");
+        } else {
+          updateField("html", article.html + "\n" + imgTag);
+        }
       }
-    } else if (previewRef.current) {
-      previewRef.current.insertHtml(imgTag);
-    } else {
-      updateField("html", article.html + "\n" + imgTag);
-    }
-  };
+    },
+    [article, activeTab]
+  );
 
-  const handleInsertSvg = (svgHtml: string) => {
-    if (!article) return;
-    if (article.mode === "markdown") {
-      if (mdEditorRef.current) {
-        mdEditorRef.current.insertAtCursor("\n\n" + svgHtml + "\n");
+  const handleInsertSvg = useCallback(
+    (svgHtml: string) => {
+      if (!article) return;
+      if (article.mode === "markdown") {
+        if (mdEditorRef.current) {
+          mdEditorRef.current.insertAtCursor("\n\n" + svgHtml + "\n");
+        } else {
+          updateField("markdown", article.markdown + "\n\n" + svgHtml + "\n");
+        }
       } else {
-        updateField("markdown", article.markdown + "\n\n" + svgHtml + "\n");
+        if (activeTab === "html" && htmlEditorRef.current) {
+          htmlEditorRef.current.insertAtCursor("\n" + svgHtml + "\n");
+        } else {
+          updateField("html", article.html + "\n" + svgHtml);
+        }
       }
-    } else if (previewRef.current) {
-      previewRef.current.insertHtml(svgHtml);
-    } else {
-      updateField("html", article.html + "\n" + svgHtml);
-    }
-  };
+    },
+    [article, activeTab]
+  );
+
+  const handlePasteImage = useCallback(
+    async (file: File) => {
+      const record = await upload(file);
+      if (record) {
+        handleInsertImage(`/images/${record.path}`);
+      }
+    },
+    [upload, handleInsertImage]
+  );
+
+  // Memoize stored semantic key to avoid re-parsing article.html on every iframe input
+  const storedSemanticKey = useMemo(
+    () => (article ? normalizeEditableHtml(article.html).semanticKey : ""),
+    [article?.html]
+  );
 
   const handlePreviewHtmlChange = useCallback(
     (newHtml: string) => {
       if (!article) return;
-      updateField("html", newHtml);
+      const next = normalizeEditableHtml(newHtml);
+      if (next.semanticKey === storedSemanticKey) return;
+      updateField("html", next.serialized);
     },
-    [article]
+    [article, storedSemanticKey]
   );
 
   const wordCount = useMemo(() => {
     if (!article) return 0;
-    const text =
-      article.mode === "markdown" ? article.markdown : article.html;
-    // Count Chinese characters + English words
-    const chinese = (text.match(/[\u4e00-\u9fff]/g) || []).length;
-    const english = (
-      text.replace(/[\u4e00-\u9fff]/g, "").match(/[a-zA-Z]+/g) || []
-    ).length;
-    return chinese + english;
+    return getWordCount(
+      article.mode === "markdown" ? article.markdown : article.html,
+      article.mode as "html" | "markdown"
+    );
   }, [article]);
 
   // Memoize raw preview data for processing pipeline
@@ -193,7 +222,7 @@ export default function EditorPage() {
         mode={article.mode as "html" | "markdown"}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        onPreview={() => setViewMode(viewMode === "preview" ? "split" : "preview")}
+        onPreview={() => setFullPreviewOpen(true)}
         onPublish={() => setPublishOpen(true)}
       />
 
@@ -298,6 +327,7 @@ export default function EditorPage() {
                         value={editorValue}
                         onChange={(v) => updateField(activeTab as keyof Article, v)}
                         language={LANG_MAP[activeTab] || "html"}
+                        onPasteImage={handlePasteImage}
                       />
                     </div>
                   </>
@@ -311,6 +341,7 @@ export default function EditorPage() {
                         ref={mdEditorRef}
                         value={article.markdown}
                         onChange={(v) => updateField("markdown", v)}
+                        onPasteImage={handlePasteImage}
                       />
                     </div>
                   </>
@@ -320,16 +351,17 @@ export default function EditorPage() {
 
             {/* Preview pane */}
             {showPreview && (
-              <div className="flex-1 min-w-[360px] shrink-0 flex flex-col bg-bg-primary">
-                <div className="flex-1 flex justify-center p-8 min-h-0">
-                  <WechatPreview
-                    ref={previewRef}
-                    html={previewHtml}
-                    css={previewCss}
-                    js={previewJs}
-                    mode={previewMode}
-                    onHtmlChange={handlePreviewHtmlChange}
-                  />
+              <div className="flex-1 min-w-[400px] shrink-0 flex flex-col bg-bg-primary overflow-hidden">
+                <div className="flex-1 overflow-y-auto overflow-x-auto">
+                  <div className="p-8 flex justify-center">
+                    <WechatPreview
+                      html={previewHtml}
+                      css={previewCss}
+                      js={previewJs}
+                      mode={previewMode}
+                      onHtmlChange={handlePreviewHtmlChange}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -363,11 +395,19 @@ export default function EditorPage() {
           <div className="border-t border-border-primary px-4 py-3">
             <div className="flex items-center justify-between text-[10px] font-mono text-fg-muted">
               <span>MBEditor 编辑</span>
-              <span>{wordCount.toLocaleString()} 字</span>
+              <span title={WORD_COUNT_TOOLTIP}>{wordCount.toLocaleString()} 字</span>
             </div>
           </div>
         </div>
       </div>
+
+      <FullScreenPreviewModal
+        open={fullPreviewOpen}
+        onClose={() => setFullPreviewOpen(false)}
+        html={previewHtml}
+        css={previewCss}
+        js={previewJs}
+      />
 
       {/* Publish Modal */}
       <PublishModal

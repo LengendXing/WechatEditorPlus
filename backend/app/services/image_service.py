@@ -69,7 +69,7 @@ def upload_image(filename: str, content: bytes) -> dict:
 
 
 def list_images() -> list[dict]:
-    return list(reversed(_load_index()))
+    return _load_index()
 
 
 def delete_image(image_id: str) -> None:

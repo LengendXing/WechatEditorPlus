@@ -1,5 +1,5 @@
 import Editor, { type OnMount } from "@monaco-editor/react";
-import { useRef, useImperativeHandle, forwardRef } from "react";
+import { useRef, useImperativeHandle, forwardRef, useEffect } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import type * as monaco from "monaco-editor";
 
@@ -12,15 +12,49 @@ interface MonacoEditorProps {
   onChange: (value: string) => void;
   language: string;
   height?: string;
+  onPasteImage?: (file: File) => Promise<void> | void;
 }
 
 const MonacoEditor = forwardRef<MonacoEditorHandle, MonacoEditorProps>(
-  function MonacoEditor({ value, onChange, language, height = "100%" }, ref) {
+  function MonacoEditor(
+    { value, onChange, language, height = "100%", onPasteImage },
+    ref,
+  ) {
     const { resolvedTheme } = useTheme();
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+    const onPasteImageRef = useRef(onPasteImage);
+
+    useEffect(() => {
+      onPasteImageRef.current = onPasteImage;
+    }, [onPasteImage]);
 
     const handleMount: OnMount = (editor) => {
       editorRef.current = editor;
+      const domNode = editor.getDomNode();
+      if (!domNode) return;
+
+      const handler = (e: ClipboardEvent) => {
+        const cb = onPasteImageRef.current;
+        if (!cb) return;
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            if (file) {
+              e.preventDefault();
+              e.stopPropagation();
+              cb(file);
+              return;
+            }
+          }
+        }
+      };
+      domNode.addEventListener("paste", handler, true);
+      editor.onDidDispose(() => {
+        domNode.removeEventListener("paste", handler, true);
+      });
     };
 
     useImperativeHandle(ref, () => ({

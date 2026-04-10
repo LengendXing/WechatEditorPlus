@@ -1,4 +1,6 @@
-import { useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
+import { normalizeEditableHtml } from "@/utils/htmlSemantics";
+import { sanitizeForWechatPreview } from "@/utils/wechatSanitizer";
 
 /** 给所有 img 加圆角、去阴影 */
 function normalizeImageStyles(html: string): string {
@@ -17,10 +19,6 @@ function normalizeImageStyles(html: string): string {
   );
 }
 
-export interface WechatPreviewHandle {
-  insertHtml: (html: string) => void;
-}
-
 interface WechatPreviewProps {
   html: string;
   css: string;
@@ -29,24 +27,43 @@ interface WechatPreviewProps {
   onHtmlChange?: (html: string) => void;
 }
 
-const WechatPreview = forwardRef<WechatPreviewHandle, WechatPreviewProps>(
-  function WechatPreview({ html, css, js, mode, onHtmlChange }, ref) {
-    const iframeRef = useRef<HTMLIFrameElement>(null);
-    const isUserEditing = useRef(false);
-    const lastSetHtml = useRef("");
-    const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+export default function WechatPreview({ html, css, js, mode, onHtmlChange }: WechatPreviewProps) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const isUserEditing = useRef(false);
+  const lastSetHtml = useRef("");
+  const lastSemanticKey = useRef("");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [iframeHeight, setIframeHeight] = useState(400);
+  const [cleanMode, setCleanMode] = useState(true);
 
-    const processedHtml = normalizeImageStyles(html);
+  const baseHtml = normalizeImageStyles(html);
+  // 清洗模拟：在 wechat 模式下可切换。raw 模式始终原样。
+  const processedHtml =
+    mode === "wechat" && cleanMode ? sanitizeForWechatPreview(baseHtml) : baseHtml;
+  // cleanMode 下禁用编辑回写，防止清洗后的 HTML 污染 Monaco 源
+  const editable = mode === "wechat" && !cleanMode;
 
-    // Write content into iframe (only when changed externally)
-    const writeToIframe = useCallback((content: string, editable: boolean) => {
-      const iframe = iframeRef.current;
-      if (!iframe) return;
+  // Listen for iframe resize messages (validate source to prevent spoofing)
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.source !== iframeRef.current?.contentWindow) return;
+      if (e.data?.type === 'mbeditor:preview-resize' && typeof e.data.height === 'number') {
+        setIframeHeight(Math.max(400, e.data.height + 40));
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
 
-      const doc = iframe.contentDocument;
-      if (!doc) return;
+  // Write content into iframe (only when changed externally)
+  const writeToIframe = useCallback((content: string, editable: boolean) => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
 
-      const fullHtml = `<!DOCTYPE html>
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+
+    const fullHtml = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <style>
   body {
@@ -63,110 +80,95 @@ const WechatPreview = forwardRef<WechatPreviewHandle, WechatPreviewProps>(
   img { border-radius: 8px; max-width: 100%; box-shadow: none; }
   ${css}
 </style>
-</head><body${editable ? ' contenteditable="true"' : ''}>${content}${js ? `<script>${js}<\/script>` : ""}</body></html>`;
+</head><body${editable ? ' contenteditable="true"' : ''}>${content}${js ? `<script>${js}<\/script>` : ""}<script>(function(){var post=function(){try{window.parent.postMessage({type:'mbeditor:preview-resize',height:document.body.scrollHeight},'*');}catch(e){}};if(typeof ResizeObserver!=='undefined'){var ro=new ResizeObserver(post);ro.observe(document.body);}Array.from(document.images).forEach(function(img){if(!img.complete)img.addEventListener('load',post);});post();setTimeout(post,100);setTimeout(post,500);})();<\/script></body></html>`;
 
-      doc.open();
-      doc.write(fullHtml);
-      doc.close();
-      lastSetHtml.current = content;
+    doc.open();
+    doc.write(fullHtml);
+    doc.close();
 
-      if (editable && onHtmlChange) {
-        // Listen for edits inside iframe
-        doc.body.addEventListener("input", () => {
-          isUserEditing.current = true;
-          if (saveTimer.current) clearTimeout(saveTimer.current);
-          saveTimer.current = setTimeout(() => {
-            const newHtml = doc.body.innerHTML;
-            lastSetHtml.current = newHtml;
-            onHtmlChange(newHtml);
+    const initial = normalizeEditableHtml(content);
+    lastSemanticKey.current = initial.semanticKey;
+    lastSetHtml.current = content;
+
+    if (editable && onHtmlChange) {
+      // Listen for edits inside iframe
+      doc.body.addEventListener("input", () => {
+        isUserEditing.current = true;
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => {
+          if (!onHtmlChange) {
             setTimeout(() => { isUserEditing.current = false; }, 500);
-          }, 800);
-        });
-
-        // Handle paste: keep HTML format
-        doc.body.addEventListener("paste", (e) => {
-          // Let browser handle paste naturally for rich content
-        });
-      }
-    }, [css, js, onHtmlChange]);
-
-    // Sync external html changes
-    useEffect(() => {
-      if (isUserEditing.current) return;
-      if (processedHtml === lastSetHtml.current) return;
-      writeToIframe(processedHtml, mode === "wechat");
-    }, [processedHtml, mode, writeToIframe]);
-
-    // Initial write on mount
-    useEffect(() => {
-      // Small delay to ensure iframe is ready
-      const timer = setTimeout(() => {
-        writeToIframe(processedHtml, mode === "wechat");
-      }, 50);
-      return () => clearTimeout(timer);
-    }, []);  // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Expose insert method
-    useImperativeHandle(ref, () => ({
-      insertHtml(newHtml: string) {
-        const iframe = iframeRef.current;
-        const doc = iframe?.contentDocument;
-        if (!doc?.body) return;
-
-        const processed = normalizeImageStyles(newHtml);
-        const sel = doc.getSelection();
-        let inserted = false;
-
-        // Try inserting at cursor position
-        if (sel && sel.rangeCount > 0) {
-          const range = sel.getRangeAt(0);
-          // Verify cursor is inside our body
-          if (doc.body.contains(range.commonAncestorContainer)) {
-            range.deleteContents();
-            const temp = doc.createElement("div");
-            temp.innerHTML = processed;
-            const frag = doc.createDocumentFragment();
-            while (temp.firstChild) frag.appendChild(temp.firstChild);
-            range.insertNode(frag);
-            range.collapse(false);
-            inserted = true;
+            return;
           }
-        }
-
-        // Fallback: append to end
-        if (!inserted) {
-          const wrapper = doc.createElement("div");
-          wrapper.innerHTML = processed;
-          while (wrapper.firstChild) {
-            doc.body.appendChild(wrapper.firstChild);
+          const next = normalizeEditableHtml(doc.body.innerHTML);
+          if (next.semanticKey !== lastSemanticKey.current) {
+            lastSemanticKey.current = next.semanticKey;
+            lastSetHtml.current = next.serialized;
+            onHtmlChange(next.serialized);
           }
-        }
+          setTimeout(() => { isUserEditing.current = false; }, 500);
+        }, 800);
+      });
 
-        // Notify parent
-        const fullContent = doc.body.innerHTML;
-        lastSetHtml.current = fullContent;
-        onHtmlChange?.(fullContent);
-      },
-    }), [onHtmlChange]);
+      // Handle paste: keep HTML format
+      doc.body.addEventListener("paste", (e) => {
+        // Let browser handle paste naturally for rich content
+      });
+    }
+  }, [css, js, onHtmlChange]);
 
-    return (
-      <div className="h-full w-full flex flex-col min-h-0">
-        <div className="mx-auto w-full max-w-[680px] h-full rounded-xl overflow-hidden border border-border-primary shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col min-h-0">
-          <div className="h-6 bg-surface-tertiary flex items-center justify-center shrink-0">
-            <span className="text-[10px] text-fg-muted font-mono">
-              {mode === "raw" ? "原始预览（只读）" : "公众号效果（可编辑）"}
-            </span>
-          </div>
-          <iframe
-            ref={iframeRef}
-            className="w-full border-0 flex-1 min-h-0"
-            style={{ background: "#FAF8F5" }}
-            title="preview"
-          />
+  // Sync external html changes
+  useEffect(() => {
+    if (isUserEditing.current) return;
+    if (processedHtml === lastSetHtml.current) return;
+    writeToIframe(processedHtml, editable);
+  }, [processedHtml, editable, writeToIframe]);
+
+  // Initial write on mount
+  useEffect(() => {
+    // Small delay to ensure iframe is ready
+    const timer = setTimeout(() => {
+      writeToIframe(processedHtml, editable);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      <div className="w-[375px] shrink-0 rounded-xl overflow-hidden border border-border-primary shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex flex-col">
+        <div className="h-6 bg-surface-tertiary flex items-center justify-between px-2 shrink-0">
+          <span className="text-[10px] text-fg-muted font-mono">
+            {mode === "raw"
+              ? "原始预览"
+              : cleanMode
+              ? "公众号效果（清洗预览）"
+              : "公众号效果（可编辑）"}
+          </span>
+          {mode === "wechat" && (
+            <button
+              onClick={() => setCleanMode((v) => !v)}
+              className="text-[10px] text-fg-muted hover:text-accent font-mono"
+              title={
+                cleanMode
+                  ? "清洗预览模式为只读，避免污染源代码；点击切回原始样式可编辑"
+                  : "切回清洗预览以接近微信真机效果（只读）"
+              }
+            >
+              {cleanMode ? "✓ 清洗预览（只读）" : "原始样式（可编辑）"}
+            </button>
+          )}
         </div>
+        <iframe
+          ref={iframeRef}
+          className="w-full border-0"
+          style={{
+            height: `${iframeHeight}px`,
+            background: "#FAF8F5",
+            transition: 'height 0.2s ease'
+          }}
+          title="preview"
+        />
       </div>
-    );
-  },
-);
-
-export default WechatPreview;
+    </div>
+  );
+}
