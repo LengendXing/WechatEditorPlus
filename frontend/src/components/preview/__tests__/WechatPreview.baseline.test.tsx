@@ -49,3 +49,24 @@ describe("WechatPreview contract (baseline freeze)", () => {
     expect(container.querySelector("iframe")).not.toBeNull();
   });
 });
+
+describe("WechatPreview post-cleanup", () => {
+  it("does not import sanitizeForWechatPreview", async () => {
+    const mod = await import("../WechatPreview");
+    // Verify the module string doesn't mention the removed function
+    const src = mod.default.toString();
+    expect(src).not.toContain("sanitizeForWechatPreview");
+    expect(src).not.toContain("normalizeImageStyles");
+  });
+
+  it("does not render a cleanMode toggle button", () => {
+    const { container } = render(
+      <WechatPreview html="<p>hi</p>" css="" mode="wechat" />
+    );
+    const buttons = container.querySelectorAll("button");
+    const hasCleanModeBtn = Array.from(buttons).some((b) =>
+      b.textContent?.includes("清洗预览")
+    );
+    expect(hasCleanModeBtn).toBe(false);
+  });
+});
