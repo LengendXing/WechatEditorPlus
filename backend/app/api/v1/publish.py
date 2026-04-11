@@ -244,49 +244,164 @@ def _restore_interactive(html: str, components: list) -> str:
 
 
 def _fix_button_anchors(html: str) -> str:
-    """Wrap styled <a> button contents in <section> so visual styling survives
-    WeChat's ProseMirror schema which strips <a> wrappers at render time but
-    preserves <section> children with their inline styles intact.
+    """Convert styled <a> buttons to <table><tr><td bgcolor> pattern.
+
+    WeChat ProseMirror treats <a> as an inline mark and cannot nest block
+    elements inside it — any visual styling on <a> (or on a wrapping child
+    <section>) is lost in the backend editor. The email-style table-button
+    preserves background/padding/border-radius on <td bgcolor>, while the
+    <a> carries only inline text properties (color/font) which PM keeps as
+    a link mark.
     """
-    pattern = re.compile(
-        r'<a\s+([^>]*?)>([^<]*?(?:<(?!/a>)[^<]*)*?)</a>',
-        re.DOTALL,
+    pattern = re.compile(r'<a\s+([^>]*?)>(.*?)</a>', re.DOTALL)
+
+    _BTN_PROPS = (
+        'background', 'background-color', 'padding',
+        'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+        'border-radius', 'border', 'border-top', 'border-right',
+        'border-bottom', 'border-left', 'text-align',
     )
+    _TEXT_PROPS = (
+        'color', 'font-size', 'font-weight', 'font-family',
+        'letter-spacing', 'line-height', 'text-decoration',
+    )
+
+    def _parse_style(s: str) -> dict:
+        out = {}
+        for part in s.split(';'):
+            part = part.strip()
+            if not part or ':' not in part:
+                continue
+            k, v = part.split(':', 1)
+            out[k.strip().lower()] = v.strip()
+        return out
+
+    def _render_style(d: dict) -> str:
+        return '; '.join(f'{k}:{v}' for k, v in d.items() if v)
+
+    def _looks_like_button(d: dict) -> bool:
+        return bool(
+            d.get('display', '').startswith('inline-block')
+            or d.get('background-color')
+            or (d.get('background') or '').lstrip().startswith('#')
+            or 'padding' in d
+            or 'border-radius' in d
+        )
 
     def _wrap(m: re.Match) -> str:
         attrs = m.group(1)
-        inner = m.group(2)
-        # Only intervene when the <a> has visual button styling
-        style_m = re.search(r'style="([^"]*)"', attrs)
-        if not style_m:
+        inner = m.group(2).strip()
+        href_m = re.search(r'href="([^"]*)"', attrs)
+        if not href_m:
             return m.group(0)
-        a_style = style_m.group(1)
-        has_button_style = bool(
-            re.search(r'display\s*:\s*inline-block', a_style)
-            or re.search(r'background(?:-color)?\s*:\s*#', a_style)
-            or re.search(r'padding\s*:', a_style)
-            or re.search(r'border-radius\s*:', a_style)
+
+        a_style_m = re.search(r'style="([^"]*)"', attrs)
+        a_style = _parse_style(a_style_m.group(1) if a_style_m else '')
+
+        # If the <a> has a single wrapping child (from a previous sanitize
+        # pass), unwind it so we can extract its button styling.
+        child_style: dict = {}
+        text_content = inner
+        child_m = re.match(
+            r'^<(section|span|div)\s+([^>]*?)>(.*)</\1>$',
+            inner, re.DOTALL,
         )
-        if not has_button_style:
+        if child_m:
+            cs_m = re.search(r'style="([^"]*)"', child_m.group(2))
+            if cs_m:
+                child_style = _parse_style(cs_m.group(1))
+                text_content = child_m.group(3).strip()
+
+        combined = {**a_style, **child_style}
+        if not _looks_like_button(combined):
             return m.group(0)
-        # Skip if content already starts with a block-level wrapper
-        if re.match(r'\s*<(section|div|table|p|span)\b', inner):
-            return m.group(0)
-        # Strip button-visual styles from <a> itself, move them to <section>
-        a_kept = re.sub(
-            r'(display|background|background-color|padding|border-radius|'
-            r'box-shadow|font-size|font-weight|letter-spacing|line-height|'
-            r'color)\s*:[^;]+;?\s*',
-            '', a_style,
-        ).strip().strip(';').strip()
-        a_attrs_new = re.sub(
-            r'style="[^"]*"',
-            f'style="text-decoration:none; color:inherit{";"+a_kept if a_kept else ""}"',
-            attrs,
+
+        # Visual box props go on td; text props go on BOTH td and a so they
+        # survive even if PM strips the <a> wrapper (PM is very aggressive
+        # about stripping <a href> inside tables for anti-phishing reasons).
+        td_style = {k: v for k, v in combined.items() if k in _BTN_PROPS}
+        text_style = {k: v for k, v in combined.items() if k in _TEXT_PROPS}
+        for k, v in text_style.items():
+            # Don't duplicate text-decoration to td (not meaningful there)
+            if k != 'text-decoration':
+                td_style[k] = v
+        a_new_style = dict(text_style)
+        a_new_style.setdefault('text-decoration', 'none')
+        a_new_style.setdefault('display', 'inline-block')
+
+        bg = td_style.pop('background', None)
+        if bg and not td_style.get('background-color'):
+            td_style['background-color'] = bg
+        bgc_val = td_style.get('background-color', '')
+        bgcolor = bgc_val if re.match(r'^#[0-9a-fA-F]{3,8}$', bgc_val) else ''
+        align = td_style.pop('text-align', 'center')
+        td_style.setdefault('text-align', align)
+
+        td_attrs = f'align="{align}"'
+        if bgcolor:
+            td_attrs += f' bgcolor="{bgcolor}"'
+        td_attrs += f' style="{_render_style(td_style)}"'
+        a_attrs_new = re.sub(r'\s*style="[^"]*"', '', attrs).strip()
+        a_attrs_new += f' style="{_render_style(a_new_style)}"'
+
+        return (
+            f'<table cellpadding="0" cellspacing="0" border="0" '
+            f'align="{align}" style="margin:14px auto; border-collapse:separate">'
+            f'<tbody><tr><td {td_attrs}>'
+            f'<a {a_attrs_new}>{text_content}</a>'
+            f'</td></tr></tbody></table>'
         )
-        return f'<a {a_attrs_new}><section style="{a_style}">{inner}</section></a>'
 
     return pattern.sub(_wrap, html)
+
+
+def _collapse_nested_sections(html: str) -> str:
+    """Collapse chains of <section> wrappers where an outer section has no
+    meaningful attributes and contains exactly one child section. Reduces
+    the number of dashed edit-mode outlines WeChat ProseMirror draws.
+    """
+    try:
+        from lxml import html as lxml_html
+        from lxml.etree import tostring
+    except Exception:
+        return html
+    try:
+        root = lxml_html.fragment_fromstring(
+            f'<div id="__collapse_root__">{html}</div>',
+            create_parent=False,
+        )
+    except Exception:
+        return html
+
+    for _ in range(20):
+        changed = False
+        for sec in list(root.iter('section')):
+            parent = sec.getparent()
+            if parent is None:
+                continue
+            if any(sec.get(a) for a in ('style', 'align', 'class', 'id', 'bgcolor')):
+                continue
+            if (sec.text or '').strip():
+                continue
+            if len(sec) != 1:
+                continue
+            only = sec[0]
+            if only.tag != 'section':
+                continue
+            if (only.tail or '').strip():
+                continue
+            only.tail = (only.tail or '') + (sec.tail or '')
+            idx = list(parent).index(sec)
+            parent.remove(sec)
+            parent.insert(idx, only)
+            changed = True
+        if not changed:
+            break
+
+    parts = [root.text or '']
+    for child in root:
+        parts.append(tostring(child, encoding='unicode', method='html'))
+    return ''.join(parts)
 
 
 def _sanitize_for_wechat(html: str) -> str:
@@ -401,6 +516,9 @@ def _sanitize_for_wechat(html: str) -> str:
 
     # ---- remove empty elements (no text content, no children with text) -------
     html = re.sub(r'<(\w+)(?:\s+[^>]*)?\s*>\s*</\1>', _remove_if_decorative, html)
+
+    # ---- collapse redundant nested <section> wrappers -------------------------
+    html = _collapse_nested_sections(html)
 
     # ---- collapse blank lines -------------------------------------------------
     html = re.sub(r'\n\s*\n', '\n', html)
