@@ -1,4 +1,4 @@
-"""Smoke test — verifies the FastAPI app can be imported and /healthz responds."""
+"""Smoke test — verifies the FastAPI app can respond to /healthz."""
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -7,13 +7,8 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_app_imports():
-    """The FastAPI app must be importable without runtime errors."""
-    assert app is not None
-    assert app.title  # has a title set
-
-
 def test_healthz_responds():
-    """The /healthz endpoint must return 200."""
+    """The /healthz endpoint must return 200 with the expected body."""
     resp = client.get("/healthz")
     assert resp.status_code == 200
+    assert resp.json() == {"status": "ok"}
