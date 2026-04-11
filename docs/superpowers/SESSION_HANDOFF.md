@@ -27,7 +27,7 @@
 | Stage | 主题 | 工程量 | 状态 | 完成日期 | 详细计划 |
 |---|---|---|---|---|---|
 | **Stage 0** | 管线清理 | 1 人·周 | ✅ 已完成 | 2026-04-11 | `2026-04-11-stage-0-pipeline-cleanup.md` |
-| **Stage 1** | BlockRegistry + MBDoc schema | 2 人·周 | ⏳ 待启动 | — | `2026-04-11-stage-1-block-registry.md` |
+| **Stage 1** | BlockRegistry + MBDoc schema | 2 人·周 | ✅ 已完成 | 2026-04-11 | `2026-04-11-stage-1-block-registry.md` |
 | **Stage 2** | HTML/Markdown renderer | 1 人·周 | ⏳ 骨架待细化 | — | 骨架章节 |
 | **Stage 3** | 图片管线 | 0.5 人·周 | ⏳ 骨架待细化 | — | 骨架章节 |
 | **Stage 4** | SVG renderer + Monaco 子编辑器 | 1.5 人·周 | ⏳ 骨架待细化 | — | 骨架章节 |
@@ -35,7 +35,7 @@
 | **Stage 6** | CLI/Agent API + 前端迁移 | 1 人·周 | ⏳ 骨架待细化 | — | 骨架章节 |
 | **Stage 7** | 真机验证 + 回归套件 | 1 人·周 | ⏳ 骨架待细化 | — | 骨架章节 |
 
-**总进度：** 1/8 Stage 完成 ≈ **10.5%**（按工程量权重）
+**总进度：** 2/8 Stage 完成 ≈ **31.5%**（按工程量权重）
 
 ---
 
@@ -62,45 +62,37 @@
 
 ## 🚀 下一个 Session 要做什么
 
-### 选项 A（推荐）：启动 Stage 1 — BlockRegistry + MBDoc Schema
+### 选项 A（推荐）：Stage 1 视觉一致性基础设施 — Task 10 + Task 11
 
-**启动方式：** 新 session 打开后，输入以下 prompt：
+Stage 1 后端骨架已经完成（MBDoc schema + BlockRegistry + render_for_wechat + /api/v1/mbdoc CRUD），但**视觉一致性验证还没开始**。用户在 session 2 明确要求：所有测试的唯一判据 = 编辑器 ↔ 公众号草稿视觉一致性，必须用 Playwright 自动化到人眼无差别为止。
 
+Task 10 和 Task 11 是 Stage 1 的扩展任务（未写入原始 plan，在 TaskList 里已列）：
+- **Task 10：** 搭建 Playwright 视觉一致性基础设施（`backend/tests/visual/`），能做到：
+  - 渲染 MBDoc → headless Chromium 截图 A
+  - 调用 `wechat_service.create_draft` 推送草稿
+  - Playwright 登录 mp.weixin.qq.com（cookie 持久化，首次扫码）→ 截图草稿预览 B
+  - 像素 diff + 语义 DOM diff 帮助函数
+  - 凭证从 `data/config.json` 读（已配置 MB科技测试号）
+- **Task 11：** 第一个 baseline 测试 —— 纯标题+段落的 MBDoc，走 Task 10 的管线对比 A/B。迭代 HeadingRenderer/ParagraphRenderer 的样式，直到人眼无差别或记录微信强制行为到 `docs/research/RESEARCH_CORRECTIONS.md`。
+
+**启动方式：**
 ```
-读 docs/superpowers/SESSION_HANDOFF.md 了解当前状态，然后按
-docs/superpowers/plans/2026-04-11-stage-1-block-registry.md 的 Task 1-9
-用 superpowers:subagent-driven-development 执行 Stage 1。
-遵守 docs/superpowers/MULTI_SESSION_ORCHESTRATION.md 里的规则。
+读 docs/superpowers/SESSION_HANDOFF.md 了解当前状态。
+执行 Task 10（Playwright 视觉一致性基础设施）和 Task 11（baseline 视觉测试），
+这两个 Task 已在 TaskList 里。
+遵守 docs/superpowers/MULTI_SESSION_ORCHESTRATION.md。
+研究 135editor / 秀米的公众号复制产物作为参考。
 ```
 
-**Stage 1 预期产出：**
-- `backend/app/models/mbdoc.py` — Pydantic schema（MBDoc + 7 种 Block 类型）
-- `backend/app/services/block_registry.py` — BlockRegistry + RenderContext
-- `backend/app/services/render_for_wechat.py` — 单一入口函数
-- `backend/app/services/mbdoc_storage.py` — 文件存储
-- `backend/app/api/v1/mbdoc.py` — CRUD + render 端点
-- `backend/app/services/renderers/heading_paragraph.py` — 最小可用 renderer
-- 单元测试 + API 测试
-- `skill/mbeditor.skill.md` 新增"MBDoc 文档模型"章节
+### 选项 B：启动 Stage 2（HTML/Markdown renderer）
 
-**Stage 1 DoD（必须全部达成才能标记完成）：**
-- [ ] `POST /api/v1/mbdoc` 创建、`GET/PUT/DELETE/LIST` 全通
-- [ ] `POST /api/v1/mbdoc/{id}/render?upload_images=false|true` 返回 HTML
-- [ ] 单元测试：同一 MBDoc 两次 render 的 diff 只在 `<img src>` 属性（WYSIWYG 不变量）
-- [ ] 端到端测试 POST→GET→PUT→render→DELETE 闭环
-- [ ] 旧 `/articles` 端点行为不受影响
-- [ ] `skill/mbeditor.skill.md` 更新完成
-- [ ] `docs/superpowers/SESSION_HANDOFF.md` 标记 Stage 1 为 ✅ 已完成
-- [ ] commit + push 到 origin/main
+如果暂时不想处理真机登录环节，可以先用 headless Chromium 做"编辑器预览 vs 后端 render HTML 截图"的半截测试，然后推进 Stage 2 实装 markdown/html block 的真实渲染器。Stage 2 完成后再补完整视觉回路。
 
-### 选项 B：新开 worktree 并行开发
+**前提：** 建议 Task 10/11 先做，避免 Stage 2-5 多个 renderer 都做完才发现对不上公众号。
 
-如果你有足够人手且想**加速**，可以用 git worktree 并行启动以下组合（任意数量）：
-- Stage 2 + Stage 3（都只依赖 Stage 1，无互相依赖）
-- Stage 4（也只依赖 Stage 1，可与 Stage 2/3 并行）
-- Stage 5（依赖 Stage 1 + Stage 3 的 image uploader 契约）
+### 选项 C：新开 worktree 并行开发 Stage 2/3/4
 
-**前提：** Stage 1 必须先完成。详见 `MULTI_SESSION_ORCHESTRATION.md` 的"并行策略"章节。
+Stage 1 后端已合并，Stage 2/3/4 都只依赖 Stage 1，理论上可以三路并行。但由于尚未建立视觉一致性基础设施（Task 10），每个 worktree 可能重复造 Playwright 轮子。**不推荐在 Task 10 之前启动。**
 
 ---
 
@@ -170,3 +162,4 @@ _当前无断点。Stage 0 完整完成。Stage 1 未启动。_
 | 日期 | Session | 事件 |
 |---|---|---|
 | 2026-04-11 | #1 | Stage 0 启动并完成。14 commit 已 push。创建多 session 协调框架。|
+| 2026-04-11 | #2 | Stage 1 后端完成（Task 1-9）：MBDoc schema + BlockRegistry + render_for_wechat + /api/v1/mbdoc CRUD + skill 更新。两阶段 review 协议，8 个 feature commit + 1 个 fix commit（path traversal / src scheme / 唯一性 validator）+ merge commit。79 后端测试全绿，7 前端测试全绿，build 绿。Task 10（Playwright 视觉一致性基础设施）和 Task 11（baseline 视觉测试）留给下一个 session。用户提供 MB科技测试公众号凭证（存 data/config.json，gitignored）。**本地合并到 main，未 push。**|

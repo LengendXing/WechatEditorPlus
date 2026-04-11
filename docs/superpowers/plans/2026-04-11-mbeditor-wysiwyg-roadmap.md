@@ -90,7 +90,7 @@ AI Agent 的工作流：`生成 MBDoc JSON` → `POST /mbdoc` → `POST /mbdoc/{
 | Stage | 主题 | 工程量 | 依赖 | 详细计划 |
 |---|---|---|---|---|
 | **Stage 0** | 管线清理 | 1 人·周 | 无 | ✅ 完成 (2026-04-11) |
-| **Stage 1** | BlockRegistry + MBDoc schema | 2 人·周 | Stage 0 | ✅ 已细化 |
+| **Stage 1** | BlockRegistry + MBDoc schema | 2 人·周 | Stage 0 | ✅ 完成 (2026-04-11) |
 | **Stage 2** | HTML/Markdown Block 渲染器 | 1 人·周 | Stage 1 | ⏳ 骨架 |
 | **Stage 3** | 图片管线（自建 CDN + 微信远程拉图） | 0.5 人·周 | Stage 1 | ⏳ 骨架 |
 | **Stage 4** | SVG Block 渲染器 + Monaco SVG 子编辑器 | 1.5 人·周 | Stage 1 | ⏳ 骨架 |
