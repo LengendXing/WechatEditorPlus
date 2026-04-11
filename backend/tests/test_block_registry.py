@@ -58,3 +58,33 @@ def test_render_context_defaults():
     ctx = RenderContext()
     assert ctx.upload_images is False
     assert ctx.image_uploader is None
+
+
+def test_registry_default_has_all_7_types():
+    r = BlockRegistry.default()
+    for bt in BlockType:
+        # find() should not raise for any built-in type
+        r.find(bt)
+
+
+def test_registry_default_heading_and_paragraph_are_real():
+    from app.services.renderers.heading_paragraph import (
+        HeadingRenderer,
+        ParagraphRenderer,
+    )
+    r = BlockRegistry.default()
+    assert isinstance(r.find(BlockType.HEADING), HeadingRenderer)
+    assert isinstance(r.find(BlockType.PARAGRAPH), ParagraphRenderer)
+
+
+def test_registry_default_others_are_stubs():
+    from app.services.renderers.stub import StubBlockRenderer
+    r = BlockRegistry.default()
+    for bt in (
+        BlockType.MARKDOWN,
+        BlockType.HTML,
+        BlockType.IMAGE,
+        BlockType.SVG,
+        BlockType.RASTER,
+    ):
+        assert isinstance(r.find(bt), StubBlockRenderer)

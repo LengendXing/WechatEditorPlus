@@ -2,8 +2,7 @@
 
 Stage 1 exposes only the core registry operations (register/find/
 render_block) and the RenderContext dataclass. The default factory
-``BlockRegistry.default()`` that wires up the full Stage-1 renderer set
-is added in Task 4 once HeadingRenderer and ParagraphRenderer exist.
+``BlockRegistry.default()`` wires up the full Stage-1 renderer set.
 """
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional
@@ -71,3 +70,31 @@ class BlockRegistry:
     def render_block(self, block: Block, ctx: RenderContext) -> str:
         renderer = self.find(block.type)
         return renderer.render(block, ctx)
+
+    @classmethod
+    def default(cls) -> "BlockRegistry":
+        """Return a registry with all 7 block types registered.
+
+        Stage 1: HEADING and PARAGRAPH use minimal working renderers;
+        the other 5 block types (MARKDOWN, HTML, IMAGE, SVG, RASTER)
+        use StubBlockRenderer placeholders. Stage 2-5 replace the stubs
+        with real renderers by updating this method.
+        """
+        # Local import to avoid import cycle: heading_paragraph imports
+        # from block_registry (via BlockRenderer base), so we must import
+        # it lazily here.
+        from app.services.renderers.heading_paragraph import (
+            HeadingRenderer,
+            ParagraphRenderer,
+        )
+        from app.services.renderers.stub import StubBlockRenderer
+
+        registry = cls()
+        registry.register(HeadingRenderer())
+        registry.register(ParagraphRenderer())
+        registry.register(StubBlockRenderer(BlockType.MARKDOWN))
+        registry.register(StubBlockRenderer(BlockType.HTML))
+        registry.register(StubBlockRenderer(BlockType.IMAGE))
+        registry.register(StubBlockRenderer(BlockType.SVG))
+        registry.register(StubBlockRenderer(BlockType.RASTER))
+        return registry
