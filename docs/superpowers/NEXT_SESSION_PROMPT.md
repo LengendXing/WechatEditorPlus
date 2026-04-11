@@ -4,131 +4,123 @@
 
 ---
 
-## 当前项目状态（2026-04-11）
+## 当前项目状态（2026-04-11 session 2 结束）
 
 - ✅ **Stage 0 完成并 push 到 origin/main**（14 commit，最末 SHA `31022de`）
-- ⏳ **Stage 1 未启动**（BlockRegistry + MBDoc schema）
-- 📋 **Stage 2-7 骨架已写**（等 Stage 1 完成后细化）
+- ✅ **Stage 1 后端完成并本地合并到 main**（11 commit，最末 SHA `dadde2e`，**未 push**）
+  - MBDoc Pydantic schema（含 path traversal + src scheme + uniqueness 安全 validator）
+  - BlockRegistry + RenderContext + HeadingRenderer + ParagraphRenderer + StubRenderer
+  - `render_for_wechat` 单一入口函数（WYSIWYG 不变量测试通过）
+  - MBDocStorage 文件存储 + `/api/v1/mbdoc` CRUD + render 端点（79 后端测试全绿）
+  - skill/mbeditor.skill.md 新增 MBDoc 章节
+- ⏳ **Task 10 + Task 11 未执行**（Playwright 视觉一致性基础设施 + baseline 测试）
+  - 这是 Stage 1 真正达成"编辑器↔公众号视觉一致"产品目标的部分
+  - session 2 做完后端骨架后把这两个 Task 延到了新 session
+- 📋 **Stage 2-7 骨架已写**（Stage 2 起依赖 Task 10 基础设施）
+
+---
 
 ## 🚀 复制到新 session 的启动 prompt
 
 ```
-我要继续 MBEditor 的 WYSIWYG 重构工作。请按以下顺序执行：
+我要继续 MBEditor 的 WYSIWYG 重构工作。当前要做 Stage 1 剩余的 Task 10 + Task 11（Playwright 视觉一致性基础设施 + baseline 测试）。
 
 ## 环境确认
 cd D:/Web/MBEditor
-git status  # 应该是干净的
-git branch --show-current  # 应该在 main
-git log --oneline -5  # 应该看到 31022de feat: stage 0
+git status  # 应干净
+git branch --show-current  # 应在 main
+git log --oneline -5  # 最上面应该是 dadde2e docs(handoff): session 2 ...
 
 ## 读协调文档（按顺序）
-1. docs/superpowers/SESSION_HANDOFF.md — 当前项目状态 + 下一步
+1. docs/superpowers/SESSION_HANDOFF.md — 当前状态 + Stage 1 完成证据
 2. docs/superpowers/MULTI_SESSION_ORCHESTRATION.md — 多 session 协议
-3. docs/superpowers/plans/2026-04-11-mbeditor-wysiwyg-roadmap.md §2 — Stage 总览表
+3. skill/mbeditor.skill.md — 新增的 MBDoc 章节（了解 API 形态）
+4. 用户记忆文件（自动加载）：
+   - feedback_mbeditor_visual_parity.md — 唯一验收标准 = 视觉一致性
+   - feedback_no_midway_checkpoints.md — 长任务一把跑完，不 checkpoint
+   - project_wechat_test_account.md — MB科技测试号，secret 在 data/config.json
 
-## 跑不变量检查
-执行 SESSION_HANDOFF.md §"不变量" 里的 7 条检查命令。任何一条红色 = 先修复，不要推进。
+## 不变量检查
+按 SESSION_HANDOFF.md §"不变量" 跑 7 条，任何一条红色 = 先修复。
+额外加：cd backend && python -m pytest -q 应该 79/79 绿。
 
-## 启动 Stage 1
-Stage 1 是 BlockRegistry + MBDoc schema + /api/v1/mbdoc CRUD 端点。
-- 详细计划：docs/superpowers/plans/2026-04-11-stage-1-block-registry.md
-- 9 个 Task，TDD 流程完整细化
-- 使用 superpowers:subagent-driven-development skill 执行
+## 启动 Task 10 + Task 11
 
-执行时请遵守：
-- 先创建 stage-1/block-registry 分支
-- 每个 Task 派 implementer subagent → spec reviewer → code quality reviewer
-- Important issues 必须 fix 后重新 review
-- 每完成一个 Task 后 TaskUpdate 标记
-- Task 粒度用 sonnet 模型；reviewer 用 sonnet；简单机械任务可以降级到 haiku
+**Task 10：Playwright 视觉一致性基础设施**
 
-## Stage 1 完成条件（DoD）
-- [ ] POST /api/v1/mbdoc + GET/PUT/DELETE + LIST 全通
-- [ ] POST /api/v1/mbdoc/{id}/render 返回 HTML
-- [ ] 核心单元测试：同一 MBDoc 两次 render 的 diff 只在 <img src> 属性
-- [ ] 端到端测试 POST→GET→PUT→render→DELETE 闭环
-- [ ] 旧 /articles 端点行为不受影响
-- [ ] skill/mbeditor.skill.md 新增 "MBDoc 文档模型" 章节
-- [ ] merge stage-1/block-registry 到 main（--no-ff）
-- [ ] 更新 docs/superpowers/SESSION_HANDOFF.md 标记 Stage 1 完成
-- [ ] commit handoff: docs(handoff): session 2 — Stage 1 complete
-- [ ] 提示我是否 push 到 origin（push 需要我明示同意）
+创建 backend/tests/visual/ 目录与基础设施，必须实现：
+1. `render_mbdoc_to_screenshot(doc: MBDoc) -> Path`：把 MBDoc 经 render_for_wechat 产出的 HTML 写进一个简单 wrapper 页面（模拟 MBEditor 预览 iframe 的 chrome：375px 宽、PingFang 字体、line-height 1.8），用 headless Chromium 截图，返回图片路径。
+2. `push_mbdoc_to_wechat_draft(doc: MBDoc) -> str`：走现有 wechat_service（读 data/config.json 凭证），推送草稿并返回 media_id。
+3. `screenshot_wechat_draft(media_id: str) -> Path`：Playwright 登录 mp.weixin.qq.com 后台（cookie 持久化到 backend/tests/visual/.auth/state.json），打开对应草稿的预览页面，截图。
+   - 首次运行：交互式打开浏览器，引导用户扫码登录，保存 storage state
+   - 后续运行：直接加载 storage state，cookie 失效时报错提醒用户重新扫码
+4. `diff_images(a: Path, b: Path, tolerance: float = 0.005) -> dict`：像素级 diff（pixelmatch 或 PIL），返回 {diff_pct, diff_image_path}
+5. `diff_dom(html_a: str, html_b: str) -> dict`：忽略 noise 属性（data-*, id, src query string）后的语义 DOM diff
+6. README 说明首次扫码登录流程
 
-## Stage 0 已知遗留（Stage 1 必须处理）
-1. backend/app/api/v1/publish.py:27 的 _WECHAT_BASE_CSS 强制 img 加 border-radius:8px
-   → Stage 1 的 ImageRenderer 替代掉这行（不在旧 publish.py 里动，在新 render_for_wechat 里建立新路径）
-2. 微信服务端会剥 position:relative 保留 position:absolute
-   → Stage 1 的 BlockRegistry 要预留一个 "compatibility hint" 字段给后续 Stage 用
+依赖：playwright (pip install playwright && playwright install chromium)、pillow 或 pixelmatch
 
-## 如果中途被中断
-立即更新 docs/superpowers/SESSION_HANDOFF.md §"断点恢复" 章节，记录：
-- 最后完成的 Task 编号
-- 未完成 Task 的具体卡点
-- 任何需要人类决策的问题
-- commit handoff 文件
+**Task 11：baseline 视觉测试**
 
-然后告诉我恢复 prompt。
+1. 在 backend/tests/visual/test_baseline.py 写一个测试，用一个纯 heading+paragraph 的 MBDoc（包含 h1-h6 + 3 段 p）
+2. 编辑器截图 A = render_mbdoc_to_screenshot(doc)
+3. 推送草稿 → 截图 B = screenshot_wechat_draft(media_id)
+4. 断言 diff_images(A, B) 的 diff_pct < 0.5%，失败时把 diff 图写到 backend/tests/visual/_artifacts/
+5. 如果对不上：
+   - 研究 135editor / 秀米复制到公众号的 HTML 产物作为参考（用 Playwright 实际打开 135editor.com 和 xiumi.us 看看）
+   - 调整 HeadingRenderer/ParagraphRenderer 的 inline style 直到视觉一致
+   - 如果差异是微信服务端强制行为（例如强制字体族、强制行距），记录到 docs/research/RESEARCH_CORRECTIONS.md 并在测试里加容忍
 
-开始吧。第一步：跑环境确认和不变量检查。
+## 执行方式
+- 使用 superpowers:subagent-driven-development 一个 Task 一个 Task 推进
+- 每个 Task 派 implementer → spec reviewer → quality reviewer
+- 前端视觉相关使用 sonnet 模型（需要判断）
+- Task 10 完成后 commit: feat(visual): playwright editor↔wechat visual parity infrastructure
+- Task 11 完成后 commit: test(visual): baseline heading+paragraph visual parity test
+- 不要跳到 Stage 2
+
+## Task 10/11 的 DoD
+- [ ] backend/tests/visual/ 基础设施到位
+- [ ] 首次扫码登录流程有文档
+- [ ] baseline 测试跑起来：编辑器截图 A vs 草稿截图 B diff_pct < 0.5%
+- [ ] 如果达不到 0.5%：记录差异根因到 RESEARCH_CORRECTIONS.md 并调整容忍阈值
+- [ ] merge 到 main 但不 push（等用户明示同意）
+- [ ] 更新 SESSION_HANDOFF.md 标记 Stage 1 真正完成
+
+## 如果中途被打断
+立即更新 docs/superpowers/SESSION_HANDOFF.md §"断点恢复"，记录最后完成的子任务和卡点。
+
+## 不要做的事
+- 不要 push（push 需用户明示同意）
+- 不要跳到 Stage 2（Task 10/11 是 Stage 1 的真正完成条件）
+- 不要在 git 跟踪文件里暴露 wechat secret
+- 不要把扫码登录 state 文件 commit（把 backend/tests/visual/.auth/ 加进 .gitignore）
+
+开始吧。第一步：环境确认 + 不变量检查。
 ```
 
 ---
 
-## 🔀 并行开发（可选）
+## 📍 session 2 的关键交付物速查
 
-如果你想同时启动多个 session 加速 Stage 2-5 的开发（必须先完成 Stage 1），按以下步骤准备 worktree：
-
-```bash
-cd D:/Web/MBEditor
-
-# Stage 1 完成后，基于最新 main 创建并行 worktree
-git worktree add ../MBEditor-stage2 -b stage-2/html-markdown-renderer main
-git worktree add ../MBEditor-stage3 -b stage-3/image-pipeline main
-git worktree add ../MBEditor-stage4 -b stage-4/svg-renderer main
-
-# 每个 worktree 独立 npm install / pip install
-cd ../MBEditor-stage2 && cd backend && pip install -r requirements-dev.txt && cd ../frontend && npm install
-# 重复 stage3/stage4...
-```
-
-然后在每个 worktree 启动一个独立 session，分别用以下 prompt：
-
-```
-我在 D:/Web/MBEditor-stage2 这个 worktree 上工作 Stage 2。
-1. 读 ../MBEditor/docs/superpowers/SESSION_HANDOFF.md 确认 Stage 1 已完成
-2. 读 ../MBEditor/docs/superpowers/MULTI_SESSION_ORCHESTRATION.md §5 并行规则
-3. 在 ../MBEditor/docs/superpowers/AGENT_LOCKS.md 登记自己的 lock
-4. 先把 docs/superpowers/plans/2026-04-11-stages-2-to-7-skeleton.md 里的 Stage 2 章节
-   展开为独立的 step 级 TDD 计划（docs/superpowers/plans/2026-04-11-stage-2-html-markdown-renderer.md）
-5. 然后用 superpowers:subagent-driven-development 执行
-6. 完成后释放 lock、更新 handoff、commit、告诉我 push
-```
-
----
-
-## ⚠️ 不要做的事
-
-- ❌ 不要在未读 SESSION_HANDOFF.md 的情况下开始任何代码工作
-- ❌ 不要跳过 two-stage review（spec + quality）
-- ❌ 不要跨 Stage（一个 session 做完 Stage 1 就停，不要顺手做 Stage 2）
-- ❌ 不要在没有我明示同意的情况下 push
-- ❌ 不要让 subagent 自己读 plan 文件（必须粘贴 Task 全文给它）
-- ❌ 不要在 docs/superpowers/ 里存放未经核实的"推测性信息"（这个目录是项目协调的真相来源）
-
----
-
-## 📍 文件速查
-
-| 我要找... | 去这里 |
+| 文件 | 作用 |
 |---|---|
-| 现在在哪 | `docs/superpowers/SESSION_HANDOFF.md` |
-| 如何多 session 协作 | `docs/superpowers/MULTI_SESSION_ORCHESTRATION.md` |
-| Stage 1 详细 TDD | `docs/superpowers/plans/2026-04-11-stage-1-block-registry.md` |
-| Stage 总览 | `docs/superpowers/plans/2026-04-11-mbeditor-wysiwyg-roadmap.md` |
-| 为什么这么设计 | `docs/research/wechat-wysiwyg-pipeline.md` 等 4 份 |
-| 给 Agent 的使用指南 | `skill/mbeditor.skill.md` |
-| Stage 0 已完成的证据 | `git log 31022de..main --oneline` |
+| `backend/app/models/mbdoc.py` | MBDoc Pydantic schema，7 种 block 类型，3 个安全 validator |
+| `backend/app/services/block_registry.py` | BlockRegistry + RenderContext + default() factory |
+| `backend/app/services/render_for_wechat.py` | 单一渲染入口 |
+| `backend/app/services/renderers/heading_paragraph.py` | H1-H6 + P 的最小 inline-styled renderer（session 3 可能要调样式） |
+| `backend/app/services/mbdoc_storage.py` | 文件存储 |
+| `backend/app/api/v1/mbdoc.py` | REST 端点 |
+| `data/config.json` | MB科技测试号凭证（**gitignored**） |
+| `skill/mbeditor.skill.md` | MBDoc 章节已加 |
+
+## ⚠️ 给 session 3 的提醒
+
+1. **Stage 1 后端已本地合并到 main 但未 push。** session 3 可能需要先问用户是否要 push（或者合并到 Task 10/11 成果后一起 push）。
+2. **heading/paragraph 的 inline style 是拍脑袋写的**，没有和真实公众号比对过。session 3 的 Task 11 很可能需要调整这两个 renderer 的样式常量（`_HEADING_STYLES` 字典和 `_PARAGRAPH_STYLE` 常量），让视觉对得上。这是符合预期的，不是 bug 修复。
+3. **Playwright 登录 mp.weixin.qq.com 首次需要用户扫码。** 不要 headless 跑第一次；要用 `headed=True` 让用户看到二维码。之后 storage state 可以跨运行复用。
+4. **微信服务端已知会剥离 `position:relative` 但保留 `position:absolute`**（研究报告结论），这不是我们的 bug，如果 baseline 测试撞到这个限制，写进 RESEARCH_CORRECTIONS.md 并接受。
 
 ---
 
-_本文件是给"新 session 启动"的一次性参考卡。Stage 1 完成后，应该由 session 2 更新本文件为 Stage 2 的启动指令。_
+_本文件由 session 2 更新，供 session 3 续接使用。Task 10/11 完成后，session 3 应该把本文件更新为 Stage 2 的启动指令。_
