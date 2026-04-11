@@ -7,3 +7,4 @@ httpx
 aiofiles
 cryptography
 premailer
+playwright

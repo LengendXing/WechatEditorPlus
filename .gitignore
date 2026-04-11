@@ -35,3 +35,7 @@ Thumbs.db
 # orchestration framework, research reports).
 CLAUDE.md
 .playwright-mcp/
+
+# Playwright visual test artifacts and auth state
+backend/tests/visual/.auth/
+backend/tests/visual/_artifacts/
