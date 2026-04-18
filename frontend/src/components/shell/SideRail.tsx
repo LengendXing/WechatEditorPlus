@@ -1,4 +1,4 @@
-import { IconList, IconEdit, IconAgent, IconSettings } from "@/components/icons";
+import { IconList, IconEdit, IconSettings } from "@/components/icons";
 import type { Route } from "@/types";
 
 interface SideRailProps {
@@ -9,7 +9,6 @@ interface SideRailProps {
 const ITEMS: { key: Route; icon: (s: number) => React.ReactNode; label: string }[] = [
   { key: "list", icon: (s) => <IconList size={s} />, label: "列表" },
   { key: "editor", icon: (s) => <IconEdit size={s} />, label: "编辑" },
-  { key: "agent", icon: (s) => <IconAgent size={s} />, label: "代理" },
 ];
 
 export default function SideRail({ route, onNavigate }: SideRailProps) {

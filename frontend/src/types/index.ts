@@ -1,4 +1,4 @@
-export type Route = "list" | "editor" | "agent" | "settings";
+export type Route = "list" | "editor" | "settings";
 export type ArticleMode = "html" | "markdown";
 
 export interface ApiResponse<T> {

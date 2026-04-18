@@ -14,7 +14,6 @@ interface TopBarProps {
 const NAV_ITEMS: { key: Route; label: string }[] = [
   { key: "list", label: "稿库" },
   { key: "editor", label: "编辑台" },
-  { key: "agent", label: "代理控制台" },
 ];
 
 function backendLabel() {
