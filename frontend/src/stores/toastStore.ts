@@ -1,40 +1,44 @@
-type ToastType = "success" | "error" | "warning" | "info";
+import { create } from "zustand";
+import type { Toast, ToastType } from "@/types";
 
-interface ToastItem {
-  id: string;
-  type: ToastType;
-  title: string;
-  desc?: string;
+interface ToastState {
+  toasts: Toast[];
+  addToast: (type: ToastType, message: string) => string;
+  removeToast: (id: string) => void;
 }
 
-type Listener = (toasts: ToastItem[]) => void;
+let toastCounter = 0;
 
-let toasts: ToastItem[] = [];
-const listeners = new Set<Listener>();
-const notify = () => listeners.forEach((l) => l([...toasts]));
+export const useToastStore = create<ToastState>()((set) => ({
+  toasts: [],
 
-function addToast(type: ToastType, title: string, desc?: string) {
-  const id = crypto.randomUUID();
-  toasts = [...toasts, { id, type, title, desc }];
-  notify();
-  setTimeout(() => toast.dismiss(id), 4000);
-}
+  addToast: (type: ToastType, message: string) => {
+    const id = `toast-${Date.now()}-${++toastCounter}`;
+    const entry: Toast = { id, type, message };
 
+    set((state) => ({ toasts: [...state.toasts, entry] }));
+
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+      set((state) => ({
+        toasts: state.toasts.filter((t) => t.id !== id),
+      }));
+    }, 4000);
+
+    return id;
+  },
+
+  removeToast: (id: string) => {
+    set((state) => ({
+      toasts: state.toasts.filter((t) => t.id !== id),
+    }));
+  },
+}));
+
+/** Convenience helpers for one-liner toast calls */
 export const toast = {
-  success: (title: string, desc?: string) => addToast("success", title, desc),
-  error: (title: string, desc?: string) => addToast("error", title, desc),
-  warning: (title: string, desc?: string) => addToast("warning", title, desc),
-  info: (title: string, desc?: string) => addToast("info", title, desc),
-  subscribe: (l: Listener) => {
-    listeners.add(l);
-    return () => {
-      listeners.delete(l);
-    };
-  },
-  dismiss: (id: string) => {
-    toasts = toasts.filter((t) => t.id !== id);
-    notify();
-  },
+  success: (message: string) => useToastStore.getState().addToast("success", message),
+  error: (message: string) => useToastStore.getState().addToast("error", message),
+  warning: (message: string) => useToastStore.getState().addToast("warning", message),
+  info: (message: string) => useToastStore.getState().addToast("info", message),
 };
-
-export type { ToastItem, ToastType };

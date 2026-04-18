@@ -1,82 +1,127 @@
-import { useState, useEffect } from "react";
-import { X, Check, AlertTriangle, AlertCircle, Info } from "lucide-react";
-import { toast, type ToastItem } from "@/stores/toastStore";
+import { useEffect, useState } from "react";
+import { IconClose } from "@/components/icons";
+import { useToastStore } from "@/stores/toastStore";
+import type { ToastType } from "@/types";
 
-const typeConfig: Record<
-  string,
-  { border: string; iconBg: string; iconColor: string; icon: React.ElementType }
-> = {
-  success: {
-    border: "border-l-success",
-    iconBg: "bg-success-bg",
-    iconColor: "text-success",
-    icon: Check,
-  },
-  error: {
-    border: "border-l-error",
-    iconBg: "bg-[#EF444414]",
-    iconColor: "text-error",
-    icon: AlertCircle,
-  },
-  warning: {
-    border: "border-l-warning",
-    iconBg: "bg-warning-bg",
-    iconColor: "text-warning",
-    icon: AlertTriangle,
-  },
-  info: {
-    border: "border-l-info",
-    iconBg: "bg-info-bg",
-    iconColor: "text-info",
-    icon: Info,
-  },
+const TONE_COLORS: Record<ToastType, string> = {
+  success: "var(--forest)",
+  error: "var(--accent)",
+  warning: "var(--warn)",
+  info: "var(--info)",
 };
 
-function ToastCard({ item }: { item: ToastItem }) {
-  const config = typeConfig[item.type];
-  const Icon = config.icon;
+function ToastItem({
+  id,
+  type,
+  message,
+  onRemove,
+}: {
+  id: string;
+  type: ToastType;
+  message: string;
+  onRemove: (id: string) => void;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger slide-in on next frame
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
 
   return (
     <div
-      className={`bg-surface-secondary rounded-lg px-4 py-3 flex items-center gap-3 shadow-lg border border-border-primary border-l-[3px] ${config.border} animate-[slide-in-right_0.3s_ease-out]`}
-      style={{ minWidth: 300, maxWidth: 420 }}
+      style={{
+        display: "flex",
+        alignItems: "stretch",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--r-sm)",
+        overflow: "hidden",
+        minWidth: 260,
+        maxWidth: 380,
+        boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+        transform: visible ? "translateX(0)" : "translateX(120%)",
+        opacity: visible ? 1 : 0,
+        transition: "transform 0.3s ease, opacity 0.3s ease",
+      }}
     >
+      {/* Color bar */}
       <div
-        className={`w-8 h-8 rounded-lg ${config.iconBg} flex items-center justify-center shrink-0`}
+        style={{
+          width: 4,
+          flexShrink: 0,
+          background: TONE_COLORS[type],
+        }}
+      />
+
+      {/* Message */}
+      <div
+        style={{
+          flex: 1,
+          padding: "10px 12px",
+          fontFamily: "var(--f-mono)",
+          fontSize: 12,
+          color: "var(--fg)",
+          lineHeight: 1.4,
+        }}
       >
-        <Icon size={16} className={config.iconColor} />
+        {message}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-semibold text-fg-primary">
-          {item.title}
-        </div>
-        {item.desc && (
-          <div className="text-[11px] text-fg-muted mt-0.5">{item.desc}</div>
-        )}
-      </div>
+
+      {/* Close */}
       <button
-        onClick={() => toast.dismiss(item.id)}
-        className="p-1 rounded-md hover:bg-surface-tertiary text-fg-muted hover:text-fg-secondary transition-colors shrink-0 cursor-pointer"
+        onClick={() => onRemove(id)}
+        style={{
+          all: "unset",
+          display: "grid",
+          placeItems: "center",
+          width: 32,
+          cursor: "pointer",
+          color: "var(--fg-4)",
+          flexShrink: 0,
+          transition: "color 0.15s",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "var(--fg-2)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.color = "var(--fg-4)";
+        }}
       >
-        <X size={14} />
+        <IconClose size={10} />
       </button>
     </div>
   );
 }
 
-export default function ToastContainer() {
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-
-  useEffect(() => {
-    return toast.subscribe(setToasts);
-  }, []);
+export default function Toast() {
+  const toasts = useToastStore((s) => s.toasts);
+  const removeToast = useToastStore((s) => s.removeToast);
 
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2">
+    <div
+      style={{
+        position: "fixed",
+        top: 16,
+        right: 16,
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        pointerEvents: "none",
+      }}
+    >
       {toasts.map((t) => (
-        <ToastCard key={t.id} item={t} />
+        <div key={t.id} style={{ pointerEvents: "auto" }}>
+          <ToastItem
+            id={t.id}
+            type={t.type}
+            message={t.message}
+            onRemove={removeToast}
+          />
+        </div>
       ))}
     </div>
   );

@@ -14,12 +14,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("monaco-editor") || id.includes("@monaco-editor")) {
-            return "monaco";
-          }
-          if (id.includes("marked") || id.includes("highlight.js")) {
-            return "markdown-vendor";
-          }
           if (id.includes("@tiptap") || id.includes("prosemirror")) {
             return "tiptap";
           }
@@ -30,8 +24,8 @@ export default defineConfig({
           ) {
             return "react-vendor";
           }
-          if (id.includes("lucide-react")) {
-            return "icons";
+          if (id.includes("zustand")) {
+            return "state";
           }
           return undefined;
         },

@@ -1,0 +1,394 @@
+import { useState, useEffect, useRef } from "react";
+import { IconAgent, IconClose, IconSend } from "@/components/icons";
+import Chip from "@/components/shared/Chip";
+import Pulse from "@/components/shared/Pulse";
+import type { AgentMessage } from "@/types";
+
+const MOCK_AGENT_STREAM: AgentMessage[] = [
+  { t: "17:02:14", kind: "user", text: "把第三段卡片改成带图的样式，图用刚上传的 warm 01" },
+  { t: "17:02:15", kind: "think", text: "识别 Block b4 · Card · Markdown 模式" },
+  { t: "17:02:16", kind: "tool", method: "GET", path: "/api/v1/articles/MB-2604-018" },
+  { t: "17:02:17", kind: "tool", method: "PUT", path: "/api/v1/articles/MB-2604-018" },
+  { t: "17:02:18", kind: "diff", add: 6, remove: 2, hint: "Card b4 + img" },
+  { t: "17:02:19", kind: "assistant", text: "已为卡片 Markdown 模式加上顶部图片，保留原文字节奏。需要同步到其他卡片吗？" },
+  { t: "17:04:03", kind: "user", text: "预览一下微信兼容样式" },
+  { t: "17:04:04", kind: "tool", method: "POST", path: "/api/v1/publish/preview" },
+  { t: "17:04:05", kind: "assistant", text: "已内联所有 CSS，剥除 Wx 不兼容属性。可推送草稿。" },
+];
+
+const SUGGESTED_ACTIONS = ["生成封面图", "改写第一段", "加入对比表格", "推送到草稿箱"];
+
+// ── Stream item renderer ──
+function AgentStreamItem({ e }: { e: AgentMessage }) {
+  if (e.kind === "user") {
+    return (
+      <div className="slide-up" style={{ marginBottom: 12 }}>
+        <div
+          className="mono"
+          style={{ fontSize: 9, color: "var(--fg-5)", letterSpacing: "0.1em", marginBottom: 4 }}
+        >
+          USER &middot; {e.t}
+        </div>
+        <div
+          style={{
+            padding: "8px 12px",
+            background: "var(--surface-2)",
+            borderRadius: 8,
+            borderLeft: "2px solid var(--fg-4)",
+            fontSize: 13,
+            color: "var(--fg-2)",
+            lineHeight: 1.6,
+          }}
+        >
+          {e.text}
+        </div>
+      </div>
+    );
+  }
+
+  if (e.kind === "assistant") {
+    return (
+      <div className="slide-up" style={{ marginBottom: 12 }}>
+        <div
+          className="mono"
+          style={{ fontSize: 9, color: "var(--gold)", letterSpacing: "0.1em", marginBottom: 4 }}
+        >
+          CLAUDE &middot; {e.t}
+        </div>
+        <div
+          style={{
+            padding: "8px 12px",
+            background: "var(--gold-soft)",
+            borderRadius: 8,
+            borderLeft: "2px solid var(--gold)",
+            fontSize: 13,
+            color: "var(--fg)",
+            lineHeight: 1.6,
+            fontFamily: "var(--f-sans)",
+          }}
+        >
+          {e.text}
+        </div>
+      </div>
+    );
+  }
+
+  if (e.kind === "think") {
+    return (
+      <div
+        className="slide-up"
+        style={{
+          marginBottom: 8,
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          color: "var(--fg-4)",
+          fontSize: 11,
+          fontFamily: "var(--f-mono)",
+        }}
+      >
+        <span style={{ opacity: 0.5 }}>&loz;</span>
+        <span style={{ fontStyle: "italic" }}>{e.text}</span>
+      </div>
+    );
+  }
+
+  if (e.kind === "tool") {
+    const methodColor =
+      e.method === "POST"
+        ? "var(--accent)"
+        : e.method === "PUT"
+          ? "var(--warn)"
+          : "var(--info)";
+    return (
+      <div
+        className="slide-up"
+        style={{
+          marginBottom: 8,
+          padding: "5px 8px",
+          background: "var(--surface)",
+          borderRadius: 4,
+          fontFamily: "var(--f-mono)",
+          fontSize: 10.5,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <span style={{ color: methodColor, fontWeight: 600 }}>{e.method}</span>
+        <span style={{ color: "var(--fg-2)" }}>{e.path}</span>
+        <span style={{ flex: 1 }} />
+        <span style={{ color: "var(--forest)" }}>200</span>
+      </div>
+    );
+  }
+
+  if (e.kind === "diff") {
+    return (
+      <div
+        className="slide-up"
+        style={{
+          marginBottom: 10,
+          padding: "8px 10px",
+          border: "1px solid var(--border-2)",
+          borderRadius: 6,
+          background: "var(--surface)",
+        }}
+      >
+        <div className="mono" style={{ fontSize: 10, color: "var(--fg-4)", marginBottom: 4 }}>
+          DIFF &middot; {e.hint}
+        </div>
+        <div style={{ display: "flex", gap: 10, fontFamily: "var(--f-mono)", fontSize: 10.5 }}>
+          <span style={{ color: "var(--forest)" }}>+{e.add}</span>
+          <span style={{ color: "var(--accent)" }}>&minus;{e.remove}</span>
+          <span style={{ flex: 1, display: "flex", gap: 2 }}>
+            {[...Array(e.add || 0)].map((_, i) => (
+              <span
+                key={`a${i}`}
+                style={{ flex: 1, height: 3, background: "var(--forest)", opacity: 0.7 }}
+              />
+            ))}
+            {[...Array(e.remove || 0)].map((_, i) => (
+              <span
+                key={`r${i}`}
+                style={{ flex: 1, height: 3, background: "var(--accent)", opacity: 0.6 }}
+              />
+            ))}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ── AgentCopilot ──
+interface AgentCopilotProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}
+
+export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
+  const [input, setInput] = useState("");
+  const [stream, setStream] = useState<AgentMessage[]>(MOCK_AGENT_STREAM);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollerRef.current) {
+      scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
+    }
+  }, [stream]);
+
+  const send = () => {
+    if (!input.trim()) return;
+    const now = new Date();
+    const t = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+    const newItems: AgentMessage[] = [
+      { t, kind: "user", text: input },
+      { t, kind: "think", text: "分析意图 · 规划调用链" },
+      { t, kind: "tool", method: "POST", path: "/api/v1/publish/process" },
+      { t, kind: "assistant", text: "已按要求处理，可在预览中查看效果。" },
+    ];
+    setStream((prev) => [...prev, ...newItems]);
+    setInput("");
+  };
+
+  // Collapsed state
+  if (!open) {
+    return (
+      <div
+        style={{
+          borderLeft: "1px solid var(--border)",
+          background: "var(--bg-deep)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "12px 0",
+        }}
+      >
+        <button
+          className="rail-btn active"
+          onClick={() => setOpen(true)}
+          title="打开 Agent 面板"
+          style={{
+            all: "unset",
+            width: 34,
+            height: 34,
+            display: "grid",
+            placeItems: "center",
+            borderRadius: "var(--r-sm)",
+            color: "var(--fg)",
+            background: "var(--surface-2)",
+            cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+        >
+          <IconAgent size={16} />
+        </button>
+        <div
+          style={{
+            marginTop: 18,
+            writingMode: "vertical-rl",
+            transform: "rotate(180deg)",
+            fontFamily: "var(--f-mono)",
+            fontSize: 9,
+            letterSpacing: "0.3em",
+            textTransform: "uppercase",
+            color: "var(--fg-5)",
+          }}
+        >
+          CLAUDE &middot; AGENT &middot; CO-PILOT
+        </div>
+      </div>
+    );
+  }
+
+  // Expanded state
+  const toolCallCount = stream.filter((e) => e.kind === "tool").length;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        borderLeft: "1px solid var(--border)",
+        background: "var(--bg-deep)",
+        minHeight: 0,
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding: "16px 20px 14px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
+              background: "var(--gold-soft)",
+              border: "1px solid var(--gold-border)",
+              display: "grid",
+              placeItems: "center",
+              color: "var(--gold)",
+            }}
+          >
+            <IconAgent size={14} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontSize: 16,
+                color: "var(--fg)",
+                fontFamily: "var(--f-display)",
+              }}
+            >
+              Claude &middot; Agent
+            </div>
+            <div className="mono" style={{ fontSize: 10, color: "var(--fg-4)" }}>
+              claude-sonnet-4.5 &middot; mbeditor.skill
+            </div>
+          </div>
+          <button
+            onClick={() => setOpen(false)}
+            className="btn btn-ghost btn-sm"
+            style={{ padding: 4 }}
+          >
+            <IconClose size={12} />
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <Chip tone="forest">
+            <Pulse size={6} />
+            LIVE
+          </Chip>
+          <Chip tone="gold">已连接编辑器</Chip>
+          <Chip>3 TOOLS</Chip>
+        </div>
+      </div>
+
+      {/* Stream */}
+      <div
+        ref={scrollerRef}
+        style={{ flex: 1, overflow: "auto", padding: "14px 18px", minHeight: 0 }}
+      >
+        <div className="caps" style={{ marginBottom: 10 }}>
+          活动流 &middot; STREAM
+        </div>
+        {stream.map((e, i) => (
+          <AgentStreamItem key={i} e={e} />
+        ))}
+      </div>
+
+      {/* Suggested actions */}
+      <div style={{ padding: "10px 18px", borderTop: "1px solid var(--border)" }}>
+        <div className="caps" style={{ marginBottom: 8 }}>
+          建议 &middot; SUGGESTED
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {SUGGESTED_ACTIONS.map((t) => (
+            <button key={t} className="btn btn-outline btn-sm" style={{ fontSize: 11 }}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Input */}
+      <div style={{ padding: "12px 16px 16px", borderTop: "1px solid var(--border)" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "6px 6px 6px 14px",
+            border: "1px solid var(--border-2)",
+            borderRadius: 10,
+            background: "var(--surface)",
+          }}
+        >
+          <span
+            className="mono"
+            style={{ color: "var(--accent)", fontSize: 12, marginRight: 8 }}
+          >
+            &rarr;
+          </span>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") send();
+            }}
+            placeholder="给 Agent 下一条指令…"
+            style={{
+              all: "unset",
+              flex: 1,
+              fontSize: 13,
+              color: "var(--fg)",
+              fontFamily: "var(--f-sans)",
+            }}
+          />
+          <button
+            onClick={send}
+            className="btn btn-primary btn-sm"
+            style={{ padding: "6px 10px" }}
+          >
+            <IconSend size={12} />
+          </button>
+        </div>
+        <div
+          className="mono"
+          style={{
+            marginTop: 8,
+            fontSize: 10,
+            color: "var(--fg-5)",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <span>{"⌘↵ 发送 · ⎋ 撤销最后一步"}</span>
+          <span>{toolCallCount} TOOL CALLS</span>
+        </div>
+      </div>
+    </div>
+  );
+}

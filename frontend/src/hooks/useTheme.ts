@@ -1,30 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
-
-type Theme = "dark" | "light" | "system";
+import { useEffect } from "react";
+import { useUIStore } from "@/stores/uiStore";
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem("mbeditor-theme") as Theme) || "dark";
-  });
-
-  const resolvedTheme = theme === "system"
-    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-    : theme;
+  const theme = useUIStore((s) => s.theme);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", resolvedTheme);
-    localStorage.setItem("mbeditor-theme", theme);
-  }, [theme, resolvedTheme]);
-
-  useEffect(() => {
-    if (theme !== "system") return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => setThemeState("system");
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    const html = document.documentElement;
+    // Remove all theme attrs, then set current
+    html.removeAttribute("data-theme");
+    if (theme === "paper") {
+      html.setAttribute("data-theme", "paper");
+    } else if (theme === "swiss") {
+      html.setAttribute("data-theme", "swiss");
+    }
+    // walnut is the default (no attribute needed, uses :root)
   }, [theme]);
-
-  const setTheme = useCallback((t: Theme) => setThemeState(t), []);
-
-  return { theme, resolvedTheme, setTheme };
 }
