@@ -27,7 +27,7 @@ function AgentStreamItem({ e }: { e: AgentMessage }) {
           className="mono"
           style={{ fontSize: 9, color: "var(--fg-5)", letterSpacing: "0.1em", marginBottom: 4 }}
         >
-          USER &middot; {e.t}
+          用户 &middot; {e.t}
         </div>
         <div
           style={{
@@ -53,7 +53,7 @@ function AgentStreamItem({ e }: { e: AgentMessage }) {
           className="mono"
           style={{ fontSize: 9, color: "var(--gold)", letterSpacing: "0.1em", marginBottom: 4 }}
         >
-          CLAUDE &middot; {e.t}
+          助手 &middot; {e.t}
         </div>
         <div
           style={{
@@ -136,7 +136,7 @@ function AgentStreamItem({ e }: { e: AgentMessage }) {
         }}
       >
         <div className="mono" style={{ fontSize: 10, color: "var(--fg-4)", marginBottom: 4 }}>
-          DIFF &middot; {e.hint}
+          变更 &middot; {e.hint}
         </div>
         <div style={{ display: "flex", gap: 10, fontFamily: "var(--f-mono)", fontSize: 10.5 }}>
           <span style={{ color: "var(--forest)" }}>+{e.add}</span>
@@ -210,7 +210,7 @@ export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
         <button
           className="rail-btn active"
           onClick={() => setOpen(true)}
-          title="打开 Agent 面板"
+          title="打开助手面板"
           style={{
             all: "unset",
             width: 34,
@@ -238,7 +238,7 @@ export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
             color: "var(--fg-5)",
           }}
         >
-          CLAUDE &middot; AGENT &middot; CO-PILOT
+          助手 &middot; 协作面板
         </div>
       </div>
     );
@@ -283,7 +283,7 @@ export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
                 fontFamily: "var(--f-display)",
               }}
             >
-              Claude &middot; Agent
+              助手 · 协作面板
             </div>
             <div className="mono" style={{ fontSize: 10, color: "var(--fg-4)" }}>
               claude-sonnet-4.5 &middot; mbeditor.skill
@@ -300,10 +300,10 @@ export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <Chip tone="forest">
             <Pulse size={6} />
-            LIVE
+            在线
           </Chip>
           <Chip tone="gold">已连接编辑器</Chip>
-          <Chip>3 TOOLS</Chip>
+          <Chip>3 次调用</Chip>
         </div>
       </div>
 
@@ -313,7 +313,7 @@ export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
         style={{ flex: 1, overflow: "auto", padding: "14px 18px", minHeight: 0 }}
       >
         <div className="caps" style={{ marginBottom: 10 }}>
-          活动流 &middot; STREAM
+          活动流 · 记录
         </div>
         {stream.map((e, i) => (
           <AgentStreamItem key={i} e={e} />
@@ -323,7 +323,7 @@ export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
       {/* Suggested actions */}
       <div style={{ padding: "10px 18px", borderTop: "1px solid var(--border)" }}>
         <div className="caps" style={{ marginBottom: 8 }}>
-          建议 &middot; SUGGESTED
+          建议 · 快捷操作
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {SUGGESTED_ACTIONS.map((t) => (
@@ -358,7 +358,7 @@ export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
             onKeyDown={(e) => {
               if (e.key === "Enter") send();
             }}
-            placeholder="给 Agent 下一条指令…"
+            placeholder="给助手下一条指令…"
             style={{
               all: "unset",
               flex: 1,
@@ -386,7 +386,7 @@ export default function AgentCopilot({ open, setOpen }: AgentCopilotProps) {
           }}
         >
           <span>{"⌘↵ 发送 · ⎋ 撤销最后一步"}</span>
-          <span>{toolCallCount} TOOL CALLS</span>
+          <span>{toolCallCount} 次调用</span>
         </div>
       </div>
     </div>

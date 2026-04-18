@@ -38,7 +38,7 @@ def _resolve_config(req: ConfigReq) -> tuple[str, str]:
         appsecret = current.get("appsecret", "")
 
     if not appsecret:
-        raise AppError(code=400, message="WeChat AppSecret is required")
+        raise AppError(code=400, message="必须填写公众号密钥（AppSecret）")
 
     return appid, appsecret
 

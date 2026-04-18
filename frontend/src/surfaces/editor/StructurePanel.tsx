@@ -96,7 +96,7 @@ function buildHtmlOutline(html: string): OutlineBlock[] {
     blocks.push({
       id: `html-image-${index}`,
       type: "image",
-      label: `Image ${index + 1}`,
+      label: `图片 ${index + 1}`,
       preview: "嵌入图片素材",
       depth: 1,
     });
@@ -176,7 +176,7 @@ export default function StructurePanel({
     >
       <div style={{ padding: "16px 20px 14px", borderBottom: "1px solid var(--border)" }}>
         <div className="caps" style={{ marginBottom: 8 }}>
-          文件 · FILE
+          文件 · 当前稿件
         </div>
         <input
           value={draft.title}
@@ -204,14 +204,14 @@ export default function StructurePanel({
             className="mono"
             style={{ fontSize: 10, color: "var(--fg-5)", letterSpacing: "0.1em" }}
           >
-            {articleId ? articleId.toUpperCase() : "NO ARTICLE"}
+            {articleId ? articleId.toUpperCase() : "未载入稿件"}
           </span>
         </div>
       </div>
 
       <div style={{ padding: "14px 12px 8px", borderBottom: "1px solid var(--border)", overflow: "auto", flex: "0 1 auto" }}>
         <div className="caps" style={{ padding: "0 8px 10px" }}>
-          结构 · OUTLINE
+          结构 · 大纲
         </div>
         <div>
           {outline.map((block, index) => {
@@ -296,7 +296,7 @@ export default function StructurePanel({
 
       <div style={{ padding: "14px 20px 14px" }}>
         <div className="caps" style={{ marginBottom: 10 }}>
-          素材 · ASSETS
+          素材 · 图片
         </div>
 
         {assets.length === 0 ? (
@@ -361,7 +361,7 @@ export default function StructurePanel({
           justifyContent: "space-between",
         }}
       >
-        <span>{outline.length} BLOCKS</span>
+        <span>{outline.length} 个区块</span>
         <span>&middot; &middot; &middot;</span>
         <span>{wordCount.toLocaleString()} 字</span>
       </div>

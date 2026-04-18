@@ -1,6 +1,6 @@
 ---
 name: mbeditor
-description: "MBEditor agent guide. Use for WeChat article authoring, rendering, preview, publish, image workflows, and architecture-aware changes."
+description: "MBEditor 助手使用说明：适用于公众号文章写作、渲染、预览、发布、图片流程以及架构相关改动。"
 user-invocable: true
 metadata:
   openclaw:
@@ -9,9 +9,9 @@ metadata:
       bins: ["curl"]
 ---
 
-# MBEditor Agent Skill
+# MBEditor 助手技能
 
-## Trigger
+## 触发时机
 
 Use this skill when the user asks to:
 
@@ -20,7 +20,7 @@ Use this skill when the user asks to:
 - work on article/image/config APIs
 - work on `MBDoc`, WeChat-safe rendering, or agent-driven document generation
 
-## Current Truth
+## 当前事实
 
 Hold these facts at the same time:
 
@@ -36,7 +36,7 @@ Read first:
 3. `docs/agent/AGENT_WORKFLOWS.md`
 4. `docs/agent/RENDER_DECISIONS.md`
 
-## Lane Check
+## 路径判断
 
 Before you act, classify the task:
 
@@ -49,7 +49,7 @@ Before you act, classify the task:
 
 If you skip this step, changes drift across both systems.
 
-## Entry Order
+## 入口顺序
 
 For code tasks, inspect in this order:
 
@@ -61,7 +61,7 @@ For code tasks, inspect in this order:
 6. `frontend/src/components/preview/WechatPreview.tsx`
 7. `frontend/src/components/panel/ActionPanel.tsx`
 
-## CLI-First Rule
+## CLI 优先规则
 
 MBEditor is moving to an agent-first `mbeditor` CLI.
 
@@ -77,7 +77,7 @@ CLI design docs:
 - `docs/cli/CLI_OVERVIEW.md`
 - `docs/cli/CLI_ANYTHING_NOTES.md`
 
-## Current Interfaces
+## 当前接口
 
 Current runtime surfaces:
 
@@ -97,7 +97,7 @@ Current data reality:
 - legacy articles are the live product path
 - `MBDoc` renderer coverage now includes all built-in block types, but frontend authoring is still bridge-first and `raster` is still on its migration-phase fallback path
 
-## Document Model Rule
+## 文档模型规则
 
 Use the right source of truth for the job:
 
@@ -107,7 +107,7 @@ Use the right source of truth for the job:
 
 Do not dual-write `Article` and `MBDoc` as equal truths.
 
-## Render Truth Rule
+## 渲染真相规则
 
 Never let these paths diverge without an explicit reason:
 

@@ -9,22 +9,22 @@ import type { Route } from "@/types";
 type Section = "wechat" | "appearance" | "editor" | "about";
 
 const NAV_ITEMS: { key: Section; label: string }[] = [
-  { key: "wechat", label: "WeChat 配置" },
+  { key: "wechat", label: "公众号配置" },
   { key: "appearance", label: "外观" },
   { key: "editor", label: "编辑器" },
   { key: "about", label: "关于" },
 ];
 
 const THEMES: { key: Theme; label: string; fg: string; bg: string; accent: string }[] = [
-  { key: "walnut", label: "Walnut", fg: "#c8b89a", bg: "#1a1612", accent: "#c8956c" },
-  { key: "paper", label: "Paper", fg: "#333", bg: "#f5f0e8", accent: "#b8860b" },
-  { key: "swiss", label: "Swiss", fg: "#222", bg: "#fff", accent: "#e30613" },
+  { key: "walnut", label: "胡桃", fg: "#c8b89a", bg: "#1a1612", accent: "#c8956c" },
+  { key: "paper", label: "纸面", fg: "#333", bg: "#f5f0e8", accent: "#b8860b" },
+  { key: "swiss", label: "瑞士", fg: "#222", bg: "#fff", accent: "#e30613" },
 ];
 
 const LAYOUTS: { key: Layout; label: string; desc: string }[] = [
-  { key: "focus", label: "Focus", desc: "单编辑器模式" },
-  { key: "split", label: "Split", desc: "编辑+预览" },
-  { key: "triptych", label: "Triptych", desc: "结构+编辑+代理" },
+  { key: "focus", label: "单栏", desc: "单编辑器模式" },
+  { key: "split", label: "双栏", desc: "编辑 + 预览" },
+  { key: "triptych", label: "三栏", desc: "结构 + 编辑 + 预览" },
 ];
 
 interface Props {
@@ -252,7 +252,7 @@ function WeChatSection() {
 
   return (
     <div style={{ maxWidth: 520 }}>
-      <SectionHeader label="WeChat 配置" />
+      <SectionHeader label="公众号配置" />
 
       <div className="flex items-center" style={{ gap: 8, marginBottom: 24 }}>
         <IconWechat size={16} />
@@ -285,19 +285,19 @@ function WeChatSection() {
         />
       </FieldGroup>
 
-      <FieldGroup label="AppSecret">
+      <FieldGroup label="AppSecret（密钥）">
         <input
           type="password"
           value={appSecret}
           onChange={(e) => setAppSecret(e.target.value)}
-          placeholder={hasStoredSecret ? "已保存，留空则沿用当前 Secret" : "••••••••••••"}
+          placeholder={hasStoredSecret ? "已保存，留空则沿用当前密钥" : "••••••••••••"}
           style={inputStyle}
         />
       </FieldGroup>
 
       {hasStoredSecret && (
         <div style={{ marginTop: -8, marginBottom: 16, fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-4)" }}>
-          当前 Secret 已保存。测试或保存时留空会保留现有值，输入新值才会覆盖。
+          当前密钥已保存。测试或保存时留空会保留现有值，输入新值才会覆盖。
         </div>
       )}
 
@@ -474,27 +474,27 @@ function AboutSection() {
   useEffect(() => {
     api.get("/version").then((res) => {
       const data = unwrapApiData<VersionPayload>(res.data);
-      setVersion(data?.version || "unknown");
+      setVersion(data?.version || "未知");
       setRepo(data?.repo || FALLBACK_REPO);
-    }).catch(() => setVersion("unknown"));
+    }).catch(() => setVersion("未知"));
   }, []);
 
   return (
     <div style={{ maxWidth: 520 }}>
       <SectionHeader label="关于" />
 
-      <FieldGroup label="VERSION">
+      <FieldGroup label="版本">
         <span style={{ fontFamily: "var(--f-mono)", fontSize: 13, color: "var(--fg)" }}>{version}</span>
       </FieldGroup>
 
-      <FieldGroup label="LINKS">
+      <FieldGroup label="链接">
         <a
           href={buildRepoUrl(repo)}
           target="_blank"
           rel="noopener noreferrer"
           style={{ fontFamily: "var(--f-mono)", fontSize: 12, color: "var(--accent)", textDecoration: "none" }}
         >
-          GitHub · {repo}
+          代码仓库 · {repo}
         </a>
       </FieldGroup>
 
@@ -510,7 +510,7 @@ function AboutSection() {
           color: "var(--fg-5)",
         }}
       >
-        MBEditor &middot; Open Source &middot; MIT
+        MBEditor &middot; 开源项目 &middot; MIT
       </div>
     </div>
   );

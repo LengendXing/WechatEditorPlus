@@ -331,7 +331,7 @@ export default function EditorSurface({ articleId, go }: EditorSurfaceProps) {
       >
         <div style={{ maxWidth: 460, textAlign: "center" }}>
           <div className="caps" style={{ color: "var(--fg-5)", marginBottom: 12 }}>
-            EDITOR READY
+            编辑器已就绪
           </div>
           <h2 className="title-serif" style={{ fontSize: 40, color: "var(--fg)", margin: "0 0 12px" }}>
             先从稿库打开一篇真实文章
@@ -361,7 +361,7 @@ export default function EditorSurface({ articleId, go }: EditorSurfaceProps) {
           textTransform: "uppercase",
         }}
       >
-        Loading article...
+        正在载入文章…
       </div>
     );
   }
@@ -379,7 +379,7 @@ export default function EditorSurface({ articleId, go }: EditorSurfaceProps) {
       >
         <div style={{ maxWidth: 460, textAlign: "center" }}>
           <div className="caps" style={{ color: "var(--fg-5)", marginBottom: 12 }}>
-            LOAD ERROR
+            加载失败
           </div>
           <h2 className="title-serif" style={{ fontSize: 40, color: "var(--fg)", margin: "0 0 12px" }}>
             无法载入这篇文章

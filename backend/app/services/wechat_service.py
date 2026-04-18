@@ -48,7 +48,7 @@ def get_access_token(force_refresh: bool = False) -> str:
 
     config = load_config()
     if not config.get("appid") or not config.get("appsecret"):
-        raise AppError(code=400, message="WeChat AppID/AppSecret not configured")
+        raise AppError(code=400, message="未配置公众号 AppID/AppSecret")
 
     resp = httpx.post(
         "https://api.weixin.qq.com/cgi-bin/stable_token",

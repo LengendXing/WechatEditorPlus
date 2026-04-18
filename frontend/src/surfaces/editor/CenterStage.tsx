@@ -73,14 +73,14 @@ export default function CenterStage({
   const wordCount = visibleSource.replace(/\s+/g, "").length;
   const previewBody = previewHtml || `
     <div style="padding: 36px 18px; text-align: center; color: #8a7e6e; font-size: 13px; line-height: 1.8;">
-      ${previewLoading ? "正在生成微信预览…" : "预览将在这里出现。"}
+      ${previewLoading ? "正在生成公众号预览…" : "预览内容会显示在这里。"}
     </div>
   `;
 
   const previewHint = useMemo(() => {
-    if (draft.mode === "markdown") return "Markdown 会先编译为 HTML，再交给后端做微信预览。";
-    if (draft.js.trim()) return "JS 会被保存，但不会参与微信预览与发布。";
-    return "预览由后端完成 CSS 内联与微信兼容处理。";
+    if (draft.mode === "markdown") return "Markdown 会先转换成 HTML，再交给后端生成公众号预览。";
+    if (draft.js.trim()) return "JS 会被保存，但不会参与公众号预览与发布。";
+    return "预览由后端完成 CSS 内联和微信兼容处理。";
   }, [draft.js, draft.mode]);
 
   return (
@@ -103,7 +103,7 @@ export default function CenterStage({
           background: "var(--surface)",
         }}
       >
-        <div className="caps">编辑 &middot; STAGE</div>
+        <div className="caps">编辑 · 工作台</div>
         <div style={{ flex: 1 }} />
 
         <Seg
@@ -275,7 +275,7 @@ export default function CenterStage({
                 gap: 8,
               }}
             >
-              <div className="caps">公众号预览 &middot; iPhone 15</div>
+              <div className="caps">公众号预览 · iPhone 15</div>
               <div className="mono" style={{ fontSize: 10, color: "var(--fg-5)" }}>
                 375 &times; 812
               </div>
@@ -325,7 +325,7 @@ export default function CenterStage({
                     textTransform: "uppercase",
                   }}
                 >
-                  Rendering...
+                  正在渲染…
                 </div>
               )}
               <div
@@ -375,13 +375,13 @@ export default function CenterStage({
         }}
       >
         <span style={{ color: saveMeta.color }}>&bull; {saveMeta.label}</span>
-        <span>LN {lineCount}</span>
+        <span>行 {lineCount}</span>
         <span>{draft.mode.toUpperCase()}</span>
-        <span>SELECTION &middot; {selected}</span>
+        <span>当前块 · {selected}</span>
         <div style={{ flex: 1 }} />
         <span>{wordCount.toLocaleString()} 字</span>
         <span>&middot; {(new Blob([draft.html + draft.css + draft.js + draft.markdown]).size / 1024).toFixed(1)}KB</span>
-        <span>&middot; ARTICLE {articleId?.toUpperCase() ?? "NONE"}</span>
+        <span>&middot; 稿件 {articleId?.toUpperCase() ?? "未载入"}</span>
       </div>
     </div>
   );

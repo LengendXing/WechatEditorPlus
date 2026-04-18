@@ -48,7 +48,7 @@ async def check_upload_size(request: Request, call_next):
         if content_length and int(content_length) > settings.MAX_UPLOAD_SIZE:
             return JSONResponse(
                 status_code=413,
-                content=fail(code=413, message="Request body too large."),
+                content=fail(code=413, message="请求体过大。"),
             )
     return await call_next(request)
 

@@ -237,10 +237,10 @@ export default function ArticleList({ go }: ArticleListProps) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 32 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-              <span className="caps">EDITION № 2604 · 稿件总库</span>
+              <span className="caps">第 2604 期 · 稿件总库</span>
               <div className="hair-rule" style={{ flex: 1 }} />
               <span className="caps tnum">
-                {articles.length.toString().padStart(3, "0")} / ENTRIES
+                {articles.length.toString().padStart(3, "0")} / 篇
               </span>
             </div>
             <h1
@@ -259,7 +259,7 @@ export default function ArticleList({ go }: ArticleListProps) {
                 letterSpacing: "0.01em",
               }}
             >
-              A desk where Agent and editor share a draft table.
+              助手与编辑在同一张稿桌上协作。
             </p>
           </div>
 
@@ -272,11 +272,11 @@ export default function ArticleList({ go }: ArticleListProps) {
               lineHeight: 1.7,
             }}
           >
-            <div>LOCAL · {new Date().toLocaleDateString("zh-CN")}</div>
+            <div>本地 · {new Date().toLocaleDateString("zh-CN")}</div>
             <div>
-              AGENT · <span style={{ color: "var(--gold)" }}>CLAUDE · CODEX · OPENCLAW</span>
+              助手 · <span style={{ color: "var(--gold)" }}>CLAUDE · CODEX · OPENCLAW</span>
             </div>
-            <div>ENDPOINT · :7072/api/v1/articles</div>
+            <div>接口 · :7072/api/v1/articles</div>
             <div
               style={{
                 marginTop: 8,
@@ -285,7 +285,7 @@ export default function ArticleList({ go }: ArticleListProps) {
                 fontFamily: "var(--f-display)",
               }}
             >
-              &mdash; Vol. III, folio iv
+              &mdash; 第三卷 · 第四页
             </div>
           </div>
         </div>
@@ -330,7 +330,7 @@ export default function ArticleList({ go }: ArticleListProps) {
             <input
               value={q}
               onChange={(event) => setQ(event.target.value)}
-              placeholder="搜索标题 · grep"
+              placeholder="搜索标题"
               style={{
                 all: "unset",
                 fontFamily: "var(--f-mono)",
@@ -394,7 +394,7 @@ export default function ArticleList({ go }: ArticleListProps) {
         >
           <span className="caps">№</span>
           <span className="caps">封面</span>
-          <span className="caps">标题 / TITLE</span>
+          <span className="caps">标题</span>
           <span className="caps">签署</span>
           <span className="caps">状态</span>
           <span className="caps tnum">字数</span>
@@ -424,7 +424,7 @@ export default function ArticleList({ go }: ArticleListProps) {
             }}
           >
             <div className="caps" style={{ color: "var(--fg-5)" }}>
-              EMPTY LEDGER
+              稿库为空
             </div>
             <div className="title-serif" style={{ fontSize: 32, color: "var(--fg)" }}>
               {emptyStateTitle}
@@ -505,7 +505,7 @@ export default function ArticleList({ go }: ArticleListProps) {
               </div>
 
               <div style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--fg-3)" }}>
-                <div>by · {isArticleFull(article) && article.author ? article.author : "MBEditor"}</div>
+                <div>作者 · {isArticleFull(article) && article.author ? article.author : "MBEditor"}</div>
                 <div style={{ color: "var(--fg-4)", marginTop: 2 }}>{formatLedgerTime(article.updated_at)}</div>
               </div>
 
@@ -545,7 +545,7 @@ export default function ArticleList({ go }: ArticleListProps) {
         >
           <span className="mono">+ + +</span>
           <span className="title-serif" style={{ fontSize: 20, fontStyle: "italic" }}>
-            {creating ? "正在建立真实草稿…" : "新建一篇 · 或让 Agent 起草"}
+            {creating ? "正在建立真实草稿…" : "新建一篇 · 或让助手起草"}
           </span>
           <span>
             <IconPlus size={14} />
@@ -565,9 +565,9 @@ export default function ArticleList({ go }: ArticleListProps) {
             textTransform: "uppercase",
           }}
         >
-          <span>MBEditor · 稿库 · End of ledger</span>
+          <span>MBEditor · 稿库 · 已到末尾</span>
           <span>— / —</span>
-          <span>Press N for new · / to search</span>
+          <span>按 N 新建 · 按 / 搜索</span>
         </div>
       </div>
     </div>

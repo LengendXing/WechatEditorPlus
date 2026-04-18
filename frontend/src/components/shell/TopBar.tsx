@@ -91,13 +91,13 @@ export default function TopBar({ route, onNavigate }: TopBarProps) {
         }}
       >
         <Chip tone="forest" style={{ gap: 8 }}>
-          <Pulse size={6} />ONLINE &middot; {apiHost}
+          <Pulse size={6} />在线 &middot; {apiHost}
         </Chip>
         <Chip className="mono tnum" style={{ color: "var(--fg-3)" }}>{time}</Chip>
         <button
           className="btn btn-ghost btn-sm"
           onClick={() => setTweaksOpen(!tweaksOpen)}
-          title="Tweaks"
+          title="外观调节"
         >
           <IconTweak size={13} /> 调节
         </button>

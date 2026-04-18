@@ -19,7 +19,7 @@ def process_article_html(article_id: str) -> str:
 def process_html_for_copy(html: str, css: str = "") -> str:
     config = load_config()
     if not config.get("appid") or not config.get("appsecret"):
-        raise AppError(code=400, message="WeChat AppID/AppSecret not configured")
+        raise AppError(code=400, message="未配置公众号 AppID/AppSecret")
 
     processed = process_for_wechat(html, css)
     return process_article_images(processed)

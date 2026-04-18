@@ -59,8 +59,8 @@ export default function TweaksPanel() {
       <TweakRow label="布局">
         <Seg
           options={[
-            { value: "focus", label: "专注" },
-            { value: "split", label: "分屏" },
+            { value: "focus", label: "单栏" },
+            { value: "split", label: "双栏" },
             { value: "triptych", label: "三栏" },
           ]}
           value={layout}

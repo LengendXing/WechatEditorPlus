@@ -2,9 +2,9 @@
 
 # MBEditor
 
-### 首款 AI Agent 原生的微信公众号编辑器
+### 首款 AI 助手原生的微信公众号编辑器
 
-**告诉你的 Agent 一句话，从排版到发布全自动完成。**
+**告诉你的助手一句话，从排版到发布全自动完成。**
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-一键部署-2496ED.svg)](docker-compose.yml)
@@ -21,7 +21,7 @@
 
 市面上的公众号编辑器都是给人用的。
 
-但当 AI Agent 成为内容生产的主力，编辑器需要的不是更好看的 UI，而是 **能被程序调用的接口**。MBEditor 的每个功能都是一个 API 端点——创建文章、上传图片、切换排版、推送草稿箱——全部 `curl` 一行搞定。
+但当 AI 助手成为内容生产的主力，编辑器需要的不是更好看的 UI，而是 **能被程序调用的接口**。MBEditor 的每个功能都是一个 API 端点——创建文章、上传图片、切换排版、推送草稿箱——全部 `curl` 一行搞定。
 
 你可以用 Claude Code 说一句「写一篇 Docker 入门推文，杂志风排版，发到草稿箱」，剩下的事情 Agent 自己完成。
 
@@ -31,14 +31,14 @@
 <tr>
 <td width="33%">
 
-**Agent 原生**
+**助手原生**
 
 不是"兼容 AI"，是"为 AI 设计"。完整 RESTful API，Skill 文件即装即用。Claude Code / Codex / OpenClaw 任意一个 Agent 都能直接操控编辑器。
 
 </td>
 <td width="33%">
 
-**CLI 全流程**
+**命令行全流程**
 
 从创建到发布，不需要打开浏览器。所有操作都可以用命令行完成。适合 CI/CD 流水线、定时任务、批量生产。
 
@@ -77,9 +77,9 @@ docker compose up --build -d
 
 > 升级不会丢失数据，文章和图片存储在 `data/` 目录中，不受容器重建影响。
 
-### 第二步：安装 AI Agent Skill
+### 第二步：安装 AI 助手技能
 
-MBEditor 提供了 `skill/mbeditor.skill.md`，安装后 Agent 就能直接操控编辑器。根据你使用的 Agent 选择对应方式：
+MBEditor 提供了 `skill/mbeditor.skill.md`，安装后助手就能直接操控编辑器。根据你使用的助手选择对应方式：
 
 <details open>
 <summary><strong>Claude Code</strong></summary>
@@ -157,9 +157,9 @@ curl -X PUT http://localhost:7072/api/v1/config \
   -d '{"appid":"wx你的appid","appsecret":"你的appsecret"}'
 ```
 
-## Agent 工作流
+## 助手工作流
 
-MBEditor 的设计哲学是 **Agent First**。Agent 通过 REST API 完成全部操作：
+MBEditor 的设计哲学是 **助手优先**。助手通过 REST API 完成全部操作：
 
 ```bash
 # 1. 创建文章
@@ -187,14 +187,14 @@ curl -X POST http://localhost:7072/api/v1/publish/draft \
 claude "写一篇关于 MBEditor 的推文，杂志风排版，推到草稿箱"
 ```
 
-## 推荐搭配 Skill
+## 推荐搭配技能
 
-MBEditor 负责编辑和发布，排版设计和内容风格可以搭配以下 Skill 使用（仅供参考）：
+MBEditor 负责编辑和发布，排版设计和内容风格可以搭配以下技能使用（仅供参考）：
 
-| Skill | 用途 | 链接 |
+| 技能 | 用途 | 链接 |
 |-------|------|------|
 | **Anthropic Frontend Design** | 排版设计风格 — 生成高质量、有设计感的 HTML 排版，告别 AI 味 | [anthropics/skills/frontend-design](https://github.com/anthropics/skills/tree/main/skills/frontend-design) |
-| **Khazix Skills** | 内容写作风格 — 公众号长文写作，个人风格化的内容输出 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) |
+| **Khazix Skills** | 内容写作风格 — 公众号长文写作、个人风格化内容输出 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) |
 
 ```bash
 # 安装示例（Claude Code）
@@ -202,7 +202,7 @@ claude install-skill https://github.com/anthropics/skills/tree/main/skills/front
 claude install-skill https://github.com/KKKKhazix/khazix-skills
 ```
 
-> 搭配使用：让 Khazix Skill 负责内容创作，Frontend Design Skill 负责排版风格，MBEditor 负责预览和发布到公众号。三者配合实现从写作到发布的全链路自动化。
+> 搭配使用：让 Khazix 技能负责内容创作，Frontend Design 技能负责排版风格，MBEditor 负责预览和发布到公众号。三者配合实现从写作到发布的全链路自动化。
 
 ## 编辑器功能
 
