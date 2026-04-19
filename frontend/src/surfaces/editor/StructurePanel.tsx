@@ -3,12 +3,15 @@ import { IconDoc, IconList, IconImage, IconCpu, IconTerminal } from "@/component
 import Seg from "@/components/ui/Seg";
 import type { ArticleMode, EditorDraft } from "@/types";
 
-interface OutlineBlock {
+export interface OutlineBlock {
   id: string;
   type: string;
   label: string;
   preview: string;
   depth: number;
+  sourceOffset: number;
+  sourceLine: number;
+  previewImageIndex?: number;
 }
 
 const BLOCK_ICON: Record<string, (size: number) => ReactNode> = {
@@ -30,15 +33,27 @@ function stripHtml(html: string) {
     .trim();
 }
 
+function lineNumberForOffset(source: string, offset: number) {
+  if (offset <= 0) return 1;
+  return source.slice(0, offset).split("\n").length;
+}
+
 function extractAssets(draft: EditorDraft) {
   const htmlMatches = Array.from(draft.html.matchAll(/<img[^>]+src=["']([^"']+)["']/gi), (match) => match[1]);
   const markdownMatches = Array.from(draft.markdown.matchAll(/!\[[^\]]*]\(([^)]+)\)/g), (match) => match[1]);
   return Array.from(new Set([...htmlMatches, ...markdownMatches])).slice(0, 6);
 }
 
-function buildMarkdownOutline(markdown: string): OutlineBlock[] {
+export function buildMarkdownOutline(markdown: string): OutlineBlock[] {
   const blocks: OutlineBlock[] = [];
   const lines = markdown.split("\n");
+  const lineOffsets: number[] = [];
+  let runningOffset = 0;
+
+  lines.forEach((line) => {
+    lineOffsets.push(runningOffset);
+    runningOffset += line.length + 1;
+  });
 
   lines.forEach((line, index) => {
     const heading = line.match(/^(#{1,6})\s+(.*)$/);
@@ -51,6 +66,8 @@ function buildMarkdownOutline(markdown: string): OutlineBlock[] {
       label: heading[2].trim(),
       preview,
       depth: Math.max(0, heading[1].length - 1),
+      sourceOffset: lineOffsets[index] ?? 0,
+      sourceLine: index + 1,
     });
   });
 
@@ -63,7 +80,15 @@ function buildMarkdownOutline(markdown: string): OutlineBlock[] {
     .slice(0, 4);
 
   if (fallback.length === 0) {
-    return [{ id: "md-body", type: "body", label: "正文", preview: "还没开始写", depth: 0 }];
+    return [{
+      id: "md-body",
+      type: "body",
+      label: "正文",
+      preview: "还没开始写",
+      depth: 0,
+      sourceOffset: 0,
+      sourceLine: 1,
+    }];
   }
 
   return fallback.map((line, index) => ({
@@ -72,33 +97,42 @@ function buildMarkdownOutline(markdown: string): OutlineBlock[] {
     label: index === 0 ? "正文" : `段落 ${index + 1}`,
     preview: line,
     depth: 0,
+    sourceOffset: markdown.indexOf(line),
+    sourceLine: lineNumberForOffset(markdown, markdown.indexOf(line)),
   }));
 }
 
-function buildHtmlOutline(html: string): OutlineBlock[] {
+export function buildHtmlOutline(html: string): OutlineBlock[] {
   const blocks: OutlineBlock[] = [];
   const headingMatches = Array.from(html.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi));
 
   headingMatches.forEach((match, index) => {
     const level = Number(match[1]);
     const label = stripHtml(match[2]) || `标题 ${index + 1}`;
+    const sourceOffset = match.index ?? 0;
     blocks.push({
       id: `html-heading-${index}`,
       type: level === 1 ? "hero" : "section",
       label,
       preview: label,
       depth: Math.max(0, level - 1),
+      sourceOffset,
+      sourceLine: lineNumberForOffset(html, sourceOffset),
     });
   });
 
   const imageMatches = Array.from(html.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
-  imageMatches.slice(0, 2).forEach((_, index) => {
+  imageMatches.slice(0, 2).forEach((match, index) => {
+    const sourceOffset = match.index ?? 0;
     blocks.push({
       id: `html-image-${index}`,
       type: "image",
       label: `图片 ${index + 1}`,
       preview: "已插入图片",
       depth: 1,
+      sourceOffset,
+      sourceLine: lineNumberForOffset(html, sourceOffset),
+      previewImageIndex: index,
     });
   });
 
@@ -106,7 +140,15 @@ function buildHtmlOutline(html: string): OutlineBlock[] {
 
   const text = stripHtml(html);
   if (!text) {
-    return [{ id: "html-body", type: "body", label: "正文", preview: "还没开始写", depth: 0 }];
+    return [{
+      id: "html-body",
+      type: "body",
+      label: "正文",
+      preview: "还没开始写",
+      depth: 0,
+      sourceOffset: 0,
+      sourceLine: 1,
+    }];
   }
 
   return text
@@ -114,13 +156,22 @@ function buildHtmlOutline(html: string): OutlineBlock[] {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 4)
-    .map((item, index) => ({
-      id: `html-body-${index}`,
-      type: index === 0 ? "hero" : "body",
-      label: index === 0 ? "开头" : `段落 ${index + 1}`,
-      preview: item,
-      depth: 0,
-    }));
+    .map((item, index) => {
+      const sourceOffset = Math.max(0, html.indexOf(item));
+      return {
+        id: `html-body-${index}`,
+        type: index === 0 ? "hero" : "body",
+        label: index === 0 ? "开头" : `段落 ${index + 1}`,
+        preview: item,
+        depth: 0,
+        sourceOffset,
+        sourceLine: lineNumberForOffset(html, sourceOffset),
+      };
+    });
+}
+
+export function buildOutlineFromDraft(draft: EditorDraft) {
+  return draft.mode === "markdown" ? buildMarkdownOutline(draft.markdown) : buildHtmlOutline(draft.html);
 }
 
 function countWords(draft: EditorDraft) {
@@ -133,6 +184,7 @@ interface StructurePanelProps {
   draft: EditorDraft;
   selected: string;
   setSelected: (id: string) => void;
+  onSelectBlock?: (block: OutlineBlock) => void;
   onTitleChange: (title: string) => void;
   onModeChange: (mode: ArticleMode) => void;
 }
@@ -142,13 +194,11 @@ export default function StructurePanel({
   draft,
   selected,
   setSelected,
+  onSelectBlock,
   onTitleChange,
   onModeChange,
 }: StructurePanelProps) {
-  const outline = useMemo(
-    () => (draft.mode === "markdown" ? buildMarkdownOutline(draft.markdown) : buildHtmlOutline(draft.html)),
-    [draft.html, draft.markdown, draft.mode],
-  );
+  const outline = useMemo(() => buildOutlineFromDraft(draft), [draft]);
 
   const assets = useMemo(() => extractAssets(draft), [draft.html, draft.markdown]);
   const wordCount = useMemo(() => countWords(draft), [draft]);
@@ -221,7 +271,10 @@ export default function StructurePanel({
             return (
               <div
                 key={block.id}
-                onClick={() => setSelected(block.id)}
+                onClick={() => {
+                  setSelected(block.id);
+                  onSelectBlock?.(block);
+                }}
                 style={{
                   display: "flex",
                   alignItems: "center",

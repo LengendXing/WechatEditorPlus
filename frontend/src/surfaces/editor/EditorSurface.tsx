@@ -6,7 +6,7 @@ import { useArticlesStore } from "@/stores/articlesStore";
 import { toast } from "@/stores/toastStore";
 import { useUIStore } from "@/stores/uiStore";
 import type { ApiResponse, ArticleFull, ArticleMode, EditorDraft, EditorField, Route } from "@/types";
-import StructurePanel from "./StructurePanel";
+import StructurePanel, { type OutlineBlock } from "./StructurePanel";
 import CenterStage from "./CenterStage";
 
 const EMPTY_DRAFT: EditorDraft = {
@@ -167,8 +167,10 @@ export default function EditorSurface({ articleId, go, canGoBack, onBack }: Edit
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [navigationRequest, setNavigationRequest] = useState<{ block: OutlineBlock; seq: number } | null>(null);
 
   const saveNonceRef = useRef(0);
+  const navigationSeqRef = useRef(0);
   const dirty = useMemo(() => isDirty(article, draft), [article, draft]);
 
   useEffect(() => {
@@ -194,6 +196,7 @@ export default function EditorSurface({ articleId, go, canGoBack, onBack }: Edit
       setPreviewError(null);
       setLoadingArticle(false);
       setSaveState("idle");
+      setNavigationRequest(null);
       setLoadError(articleId === "new" ? "请先从列表创建一篇文章。" : null);
       return () => {
         cancelled = true;
@@ -213,6 +216,7 @@ export default function EditorSurface({ articleId, go, canGoBack, onBack }: Edit
         const restoredDraft = readStoredDraft(articleId);
         setDraft(restoredDraft ?? normalizeArticle(nextArticle));
         setSelected("body");
+        setNavigationRequest(null);
         setTab((restoredDraft?.mode ?? nextArticle.mode) === "markdown" ? "markdown" : "html");
         setSaveState(restoredDraft && isDirty(nextArticle, restoredDraft) ? "dirty" : "saved");
       })
@@ -311,6 +315,16 @@ export default function EditorSurface({ articleId, go, canGoBack, onBack }: Edit
   const handleFieldChange = (field: EditorField, value: string) => {
     setDraft((current) => applyDraftFieldChange(current, field, value));
   };
+
+  const handleSelectOutlineBlock = useCallback((block: OutlineBlock) => {
+    const contentTab = draft.mode === "markdown" ? "markdown" : "html";
+    setSelected(block.id);
+    setTab(contentTab);
+    setNavigationRequest({
+      block,
+      seq: ++navigationSeqRef.current,
+    });
+  }, [draft.mode]);
 
   const [copying, setCopying] = useState(false);
 
@@ -450,6 +464,7 @@ export default function EditorSurface({ articleId, go, canGoBack, onBack }: Edit
           draft={draft}
           selected={selected}
           setSelected={setSelected}
+          onSelectBlock={handleSelectOutlineBlock}
           onTitleChange={(title) => handleFieldChange("title", title)}
           onModeChange={(mode) => handleFieldChange("mode", mode)}
         />
@@ -465,6 +480,7 @@ export default function EditorSurface({ articleId, go, canGoBack, onBack }: Edit
         setTab={setTab}
         saveState={saveState}
         selected={selected}
+        navigationRequest={navigationRequest}
         previewHtml={previewHtml}
         previewLoading={previewLoading}
         previewError={previewError}
