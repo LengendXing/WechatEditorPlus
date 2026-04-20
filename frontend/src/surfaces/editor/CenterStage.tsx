@@ -67,23 +67,59 @@ function normalizeEditablePreviewHtml(value: string) {
   return doc.body.innerHTML.trim();
 }
 
+// Publish-pipeline injects a purely cosmetic outer <section> so the preview
+// canvas matches the WeChat .rich_media_content container. That wrapper
+// breaks the source↔preview shape comparison downstream, so peel any such
+// cosmetic shell (including nested layers) until the preview's top level
+// either matches the source or stops looking cosmetic.
+const COSMETIC_STYLE_PATTERN = /(?:^|;)\s*(?:font-(?:size|family|weight|style)|line-height|letter-spacing|color|background(?:-color)?|word-(?:wrap|break)|padding|margin|text-align)\s*:/i;
+
+function looksCosmetic(section: Element): boolean {
+  if (section.classList.contains("wechat-root")) return true;
+  const style = section.getAttribute("style") ?? "";
+  if (!style.trim()) return false;
+  return COSMETIC_STYLE_PATTERN.test(style);
+}
+
 function stripPreviewWrapper(doc: Document, sourceDoc?: Document) {
   const body = doc.body;
   const sourceChildren = sourceDoc ? semanticChildNodes(sourceDoc.body) : [];
-  const sourceHasSectionRoot = (
-    sourceChildren.length === 1 &&
-    sourceChildren[0] instanceof Element &&
-    sourceChildren[0].tagName === "SECTION"
+  const sourceFirstElement = (
+    sourceChildren.length === 1 && sourceChildren[0] instanceof Element
+      ? (sourceChildren[0] as Element)
+      : null
   );
-  if (
-    body.children.length === 1 &&
-    body.firstElementChild?.tagName === "SECTION" &&
-    (
-      body.firstElementChild.classList.contains("wechat-root") ||
-      !sourceHasSectionRoot
-    )
-  ) {
-    body.replaceChildren(...Array.from(body.firstElementChild.childNodes).map((node) => node.cloneNode(true)));
+  const sourceHasSectionRoot = sourceFirstElement?.tagName === "SECTION";
+
+  // Peel layers of single-child <section> wrappers while they look like
+  // cosmetic envelopes. Cap the loop so a malformed preview can never hang.
+  let safety = 6;
+  while (safety-- > 0) {
+    const children = Array.from(body.children);
+    if (children.length !== 1) break;
+    const only = children[0];
+    if (only.tagName !== "SECTION") break;
+
+    // Stop as soon as the preview top matches the source's root shape, so
+    // nodesShareShape has a real chance to succeed without extra unwrapping.
+    if (sourceHasSectionRoot && sourceFirstElement) {
+      const previewKids = semanticChildNodes(only);
+      const sourceKids = semanticChildNodes(sourceFirstElement);
+      if (
+        previewKids.length === sourceKids.length &&
+        previewKids.every((kid, i) => (
+          kid instanceof Element &&
+          sourceKids[i] instanceof Element &&
+          (kid as Element).tagName === (sourceKids[i] as Element).tagName
+        ))
+      ) {
+        break;
+      }
+    }
+
+    if (!looksCosmetic(only) && sourceHasSectionRoot) break;
+
+    body.replaceChildren(...Array.from(only.childNodes).map((node) => node.cloneNode(true)));
   }
 }
 

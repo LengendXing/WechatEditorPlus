@@ -456,4 +456,80 @@ describe("CenterStage", () => {
 
     expect(onFieldChange).toHaveBeenCalledWith("markdown", "# 标题\n\n正文第一段。\n\n新增一段。");
   });
+
+  it("preserves inline styles on the source html when a text-only preview edit lands inside the cosmetic wrapper", () => {
+    vi.useFakeTimers();
+    const onFieldChange = vi.fn();
+
+    const styledSource = [
+      '<section style="padding:0;background:#FAF6EB;">',
+      '<section style="background-color:#0f172a;padding:52px;"><section style="color:#fff;font-size:28px;">2026 年第一季度</section></section>',
+      '<section style="padding:28px 22px;">',
+      '<section style="font-size:13px;color:#64748b;letter-spacing:3px;">导读</section>',
+      '</section>',
+      '</section>',
+    ].join("");
+
+    // Mirror what POST /publish/preview returns: the styled source wrapped in the
+    // publish pipeline's cosmetic <section> envelope.
+    const processedPreview = [
+      '<section style="font-size:16px; line-height:1.8; color:#333; word-wrap:break-word; word-break:break-all">',
+      styledSource,
+      "</section>",
+    ].join("");
+
+    render(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={{ ...DRAFT, html: styledSource }}
+        view="preview"
+        setView={vi.fn()}
+        tab="html"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml={processedPreview}
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    const editable = screen.getByTestId("preview-editable-content");
+    const walker = document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
+    let target: Text | null = null;
+    while (walker.nextNode()) {
+      if ((walker.currentNode as Text).textContent?.trim() === "导读") {
+        target = walker.currentNode as Text;
+        break;
+      }
+    }
+    expect(target).not.toBeNull();
+    target!.textContent = "导读 · 回归";
+    fireEvent.input(editable);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onFieldChange).toHaveBeenCalled();
+    const [[field, nextHtml]] = onFieldChange.mock.calls;
+    expect(field).toBe("html");
+    // Must preserve every inline style attr from the original source …
+    expect(nextHtml).toContain('background:#FAF6EB');
+    expect(nextHtml).toContain('background-color:#0f172a');
+    expect(nextHtml).toContain('letter-spacing:3px');
+    // … while routing the text edit to the 导读 node.
+    expect(nextHtml).toContain('导读 · 回归');
+    // The cosmetic publish-pipeline envelope must not leak back into the source.
+    expect(nextHtml).not.toContain('word-wrap:break-word');
+  });
 });
