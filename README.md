@@ -17,35 +17,6 @@
 
 ![MBEditor V5 编辑器](docs/screenshots/editor-v5.png)
 
-## 宣传片
-
-36 秒看完 MBEditor 怎么把"动动嘴"变成已就绪的公众号草稿。
-
-<div align="center">
-
-<video src="docs/promo/promo.webm" poster="docs/promo/promo-poster.png" controls muted playsinline width="720">
-  <a href="docs/promo/promo.webm"><img src="docs/promo/promo-poster.png" width="720" alt="MBEditor Promo 宣传片（点击下载播放）"/></a>
-</video>
-
-</div>
-
-<table>
-<tr>
-<td align="center" width="33%"><strong>01 · 过去</strong><br/>点来点去，一稿折腾半小时</td>
-<td align="center" width="33%"><strong>02 · 现在</strong><br/>一句话，Agent 在手机草稿里实时排版</td>
-<td align="center" width="34%"><strong>03 · 草稿已就绪</strong><br/>12 秒进公众号后台</td>
-</tr>
-<tr>
-<td><img src="docs/promo/poster.jpg" alt="开场" /></td>
-<td><img src="docs/promo/scene-chat.jpg" alt="对话→草稿" /></td>
-<td><img src="docs/promo/scene-publish.jpg" alt="推草稿箱" /></td>
-</tr>
-</table>
-
-> - Gitea（1.22+ 默认配置）/ 自部署 markdown 渲染器：上面的 `<video>` 会直接内嵌播放。
-> - GitHub：markdown sanitizer 会把 `<video>` 降级成 poster 图片链接，点开是同目录的 `promo.webm`。想要内嵌播放，把 `docs/promo/promo.webm` 拖进任意 issue / release 评论框上传，拿到 `user-attachments/assets/...` URL 再贴回 README。
-> - 源码：React + `Stage/Sprite` 时间轴，6 个场景、36 秒。本地完整 1080p 播放 `cd docs/promo && python -m http.server 7077`，浏览器打开 `http://localhost:7077/` 切到「宣传片」tab。录屏复现 `python scripts/record_promo.py`。
-
 ## 为什么做了这个
 
 市面上的公众号编辑器都是给人用的。
@@ -349,7 +320,6 @@ mbeditor/
 │   └── mbeditor.skill.md   # Claude Code / Codex / OpenClaw 兼容
 ├── docs/
 │   ├── cli/examples/templates/  # 五套示例模板 tpl_*.json
-│   ├── promo/              # 36 秒宣传片（HTML + React 时间轴）
 │   └── screenshots/        # README 截图
 ├── docker-compose.yml      # 一键部署
 └── LICENSE                 # MIT
