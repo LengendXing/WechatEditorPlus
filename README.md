@@ -9,7 +9,7 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-一键部署-2496ED.svg)](docker-compose.yml)
 [![AI Agent](https://img.shields.io/badge/Agent-Claude_|_Codex_|_OpenClaw-8B5CF6.svg)](skill/mbeditor.skill.md)
-[![Version](https://img.shields.io/badge/Version-V5-E8553A.svg)](https://github.com/AAAAAnson/mbeditor/releases/tag/v5.0)
+[![Version](https://img.shields.io/badge/Version-V5-E8553A.svg)](https://github.com/AAAAAnson/mbeditor/releases/tag/v5.0.0)
 
 </div>
 

@@ -16,6 +16,13 @@ def _article_path(article_id: str) -> Path:
     return _articles_dir() / f"{article_id}.json"
 
 
+def _article_mtime(path: Path) -> float:
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return float("-inf")
+
+
 def create_article(title: str, mode: str = "html") -> dict:
     _articles_dir().mkdir(parents=True, exist_ok=True)
     article_id = uuid.uuid4().hex[:12]
@@ -72,7 +79,7 @@ def delete_article(article_id: str) -> None:
 def list_articles() -> list[dict]:
     _articles_dir().mkdir(parents=True, exist_ok=True)
     articles = []
-    for f in sorted(_articles_dir().glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+    for f in sorted(_articles_dir().glob("*.json"), key=_article_mtime, reverse=True):
         try:
             data = json.loads(f.read_text(encoding="utf-8"))
             articles.append({
@@ -83,6 +90,6 @@ def list_articles() -> list[dict]:
                 "created_at": data["created_at"],
                 "updated_at": data["updated_at"],
             })
-        except (json.JSONDecodeError, KeyError):
+        except (OSError, json.JSONDecodeError, KeyError):
             continue
     return articles

@@ -235,7 +235,11 @@ function mergeEditedPreviewIntoSource(sourceHtml: string, editedPreviewHtml: str
 }
 
 function normalizeMarkdownText(value: string) {
-  return value.replace(/\u00A0/g, " ").replace(/\s+/g, " ");
+  return value
+    .replace(/\u00A0/g, " ")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ *\n */g, "\n");
 }
 
 function escapeMarkdownText(value: string) {
@@ -285,7 +289,7 @@ function serializeInlineMarkdown(node: Node): string {
 }
 
 function serializeInlineMarkdownNodes(nodes: Node[]) {
-  return nodes.map(serializeInlineMarkdown).join("").replace(/[ \t]+\n/g, "\n").trim();
+  return nodes.map(serializeInlineMarkdown).join("").replace(/\n[ \t]+/g, "\n").trim();
 }
 
 function isBlockMarkdownElement(element: Element) {

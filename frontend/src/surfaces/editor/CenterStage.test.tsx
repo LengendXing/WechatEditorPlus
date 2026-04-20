@@ -347,6 +347,64 @@ describe("CenterStage", () => {
     expect(onFieldChange).toHaveBeenCalledWith("markdown", "# Hello preview\n\n已更新正文");
   });
 
+  it("preserves markdown hard breaks during preview round-trips", () => {
+    vi.useFakeTimers();
+    const onFieldChange = vi.fn();
+
+    render(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={{
+          ...DRAFT,
+          mode: "markdown",
+          html: "<p>第一行<br>第二行</p>",
+          markdown: "第一行  \n第二行",
+        }}
+        view="preview"
+        setView={vi.fn()}
+        tab="markdown"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml={[
+          '<section style="font-size:16px; line-height:1.8; color:#333;">',
+          '<p style="margin:0; color:#333;">第一行<br>第二行</p>',
+          "</section>",
+        ].join("")}
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    const editable = screen.getByTestId("preview-editable-content");
+    const walker = document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
+    let target: Text | null = null;
+    while (walker.nextNode()) {
+      if ((walker.currentNode as Text).textContent?.includes("第二行")) {
+        target = walker.currentNode as Text;
+        break;
+      }
+    }
+    expect(target).not.toBeNull();
+    target!.textContent = "第二行已改";
+    fireEvent.input(editable);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onFieldChange).toHaveBeenCalledWith("markdown", "第一行  \n第二行已改");
+  });
+
   it("keeps structural edits clean when preview adds a new paragraph", () => {
     vi.useFakeTimers();
     const onFieldChange = vi.fn();
@@ -531,6 +589,87 @@ describe("CenterStage", () => {
     expect(nextHtml).toContain('导读 · 回归');
     // The cosmetic publish-pipeline envelope must not leak back into the source.
     expect(nextHtml).not.toContain('word-wrap:break-word');
+  });
+
+  it.each([
+    {
+      label: "ul roots",
+      sourceHtml: '<section style="padding:0;background:#fff;"><ul style="padding-left:20px;color:#111;"><li>Alpha</li></ul></section>',
+      targetText: "Alpha",
+      nextText: "Beta",
+      preserved: ['<ul', 'padding-left:20px', '<li>Beta</li>'],
+    },
+    {
+      label: "anchor roots",
+      sourceHtml: '<section style="padding:0;background:#fff;"><p><a href="https://example.com" style="color:#0f172a;">Read more</a></p></section>',
+      targetText: "Read more",
+      nextText: "Read next",
+      preserved: ['href="https://example.com"', 'color:#0f172a', 'Read next'],
+    },
+    {
+      label: "svg roots",
+      sourceHtml: '<section style="padding:0;background:#fff;"><svg width="100" height="20" viewBox="0 0 100 20"><text x="0" y="15" fill="#111">Badge</text></svg></section>',
+      targetText: "Badge",
+      nextText: "Badge 2",
+      preserved: ["<svg", 'fill="#111"', "Badge 2"],
+    },
+  ])("preserves same-shape %s edits inside the cosmetic wrapper", ({ sourceHtml, targetText, nextText, preserved }) => {
+    vi.useFakeTimers();
+    const onFieldChange = vi.fn();
+
+    render(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={{ ...DRAFT, html: sourceHtml }}
+        view="preview"
+        setView={vi.fn()}
+        tab="html"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml={[
+          '<section style="font-size:16px; line-height:1.8; color:#333; word-wrap:break-word; word-break:break-all">',
+          sourceHtml,
+          "</section>",
+        ].join("")}
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    const editable = screen.getByTestId("preview-editable-content");
+    const walker = document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
+    let target: Text | null = null;
+    while (walker.nextNode()) {
+      if ((walker.currentNode as Text).textContent?.trim() === targetText) {
+        target = walker.currentNode as Text;
+        break;
+      }
+    }
+    expect(target).not.toBeNull();
+    target!.textContent = nextText;
+    fireEvent.input(editable);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onFieldChange).toHaveBeenCalled();
+    const [[field, nextHtml]] = onFieldChange.mock.calls;
+    expect(field).toBe("html");
+    preserved.forEach((snippet) => {
+      expect(nextHtml).toContain(snippet);
+    });
+    expect(nextHtml).not.toContain("word-wrap:break-word");
   });
 
   it("strips script tags and event handlers when a structural edit falls through the sanitizer", () => {

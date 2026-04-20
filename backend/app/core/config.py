@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings
@@ -8,7 +9,11 @@ GITHUB_REPO = "AAAAAnson/mbeditor"
 
 
 def default_data_root(module_path: str | Path | None = None) -> Path:
-    source = Path(module_path or __file__).resolve()
+    override = os.getenv("MBEDITOR_DATA_ROOT")
+    if override:
+        return Path(override).expanduser().absolute()
+
+    source = Path(module_path or __file__).expanduser().absolute()
     backend_root = source.parents[2]
     repo_root = backend_root.parent
 

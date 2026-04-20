@@ -32,8 +32,6 @@ def ensure_data_directories() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    ensure_data_directories()
-    logger.info("Data directories ensured.")
     try:
         seeded = seed_showcase_templates_if_empty()
         if seeded:
