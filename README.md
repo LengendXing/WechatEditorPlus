@@ -22,9 +22,11 @@
 36 秒看完 MBEditor 怎么把"动动嘴"变成已就绪的公众号草稿。
 
 <div align="center">
-  <a href="docs/promo/index.html">
-    <img src="docs/promo/poster.jpg" width="720" alt="MBEditor Promo 宣传片" />
-  </a>
+
+<video src="docs/promo/promo.webm" poster="docs/promo/promo-poster.png" controls muted playsinline width="720">
+  <a href="docs/promo/promo.webm"><img src="docs/promo/promo-poster.png" width="720" alt="MBEditor Promo 宣传片（点击下载播放）"/></a>
+</video>
+
 </div>
 
 <table>
@@ -40,8 +42,9 @@
 </tr>
 </table>
 
-> 宣传片源码是 React + `Stage/Sprite` 时间轴组件，共 6 个场景、36 秒、1920×1080。
-> 本地完整播放：`cd docs/promo && python -m http.server 7077`，浏览器打开 `http://localhost:7077/`。
+> - Gitea（1.22+ 默认配置）/ 自部署 markdown 渲染器：上面的 `<video>` 会直接内嵌播放。
+> - GitHub：markdown sanitizer 会把 `<video>` 降级成 poster 图片链接，点开是同目录的 `promo.webm`。想要内嵌播放，把 `docs/promo/promo.webm` 拖进任意 issue / release 评论框上传，拿到 `user-attachments/assets/...` URL 再贴回 README。
+> - 源码：React + `Stage/Sprite` 时间轴，6 个场景、36 秒。本地完整 1080p 播放 `cd docs/promo && python -m http.server 7077`，浏览器打开 `http://localhost:7077/` 切到「宣传片」tab。录屏复现 `python scripts/record_promo.py`。
 
 ## 为什么做了这个
 
