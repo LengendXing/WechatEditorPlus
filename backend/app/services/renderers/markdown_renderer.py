@@ -113,10 +113,16 @@ def _simple_markdown_to_html(source: str) -> str:
 
 
 def render_markdown_source(source: str) -> str:
+    # Keep ``html=False`` so stray ``<script>``/``<iframe>``/``on*`` attributes
+    # embedded in a user's Markdown source are rendered as escaped text rather
+    # than live HTML when this output is written back to ``article.html``.
+    # Callers that want raw HTML should use ``mode=html`` explicitly; the publish
+    # pipeline also re-sanitizes before handing anything to WeChat, but we keep
+    # the stored artifact safe on its own.
     try:
         from markdown_it import MarkdownIt  # type: ignore
 
-        return MarkdownIt("commonmark", {"html": True}).render(source)
+        return MarkdownIt("commonmark", {"html": False}).render(source)
     except Exception:
         return _simple_markdown_to_html(source)
 

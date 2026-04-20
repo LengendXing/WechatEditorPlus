@@ -11,6 +11,7 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.response import fail
+from app.services.showcase_seed import seed_showcase_templates_if_empty
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,6 +34,12 @@ def ensure_data_directories() -> None:
 async def lifespan(app: FastAPI):
     ensure_data_directories()
     logger.info("Data directories ensured.")
+    try:
+        seeded = seed_showcase_templates_if_empty()
+        if seeded:
+            logger.info("First-run showcase seed wrote %d articles.", seeded)
+    except Exception:  # pragma: no cover - defensive, first-run must never fail boot
+        logger.exception("Showcase seeding failed, continuing with empty article list.")
     yield
     logger.info("Application shutdown complete.")
 

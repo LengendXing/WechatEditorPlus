@@ -165,12 +165,47 @@ function copyTextContent(sourceNode: Node, previewNode: Node) {
   });
 }
 
+const DANGEROUS_TAGS = new Set([
+  "SCRIPT",
+  "IFRAME",
+  "OBJECT",
+  "EMBED",
+  "LINK",
+  "META",
+  "STYLE",
+  "BASE",
+  "FRAME",
+  "FRAMESET",
+]);
+
 function cleanPreviewFallback(doc: Document) {
-  doc.body.querySelectorAll("[style],[class],[contenteditable]").forEach((node) => {
-    if (!(node instanceof HTMLElement)) return;
-    node.removeAttribute("style");
-    node.removeAttribute("class");
-    node.removeAttribute("contenteditable");
+  // Structural edits fall through here, so treat anything the user could have
+  // pasted from a rich-text source (Notion, Word, the open web) as untrusted.
+  // Drop executable/navigation tags outright, strip ``on*`` inline handlers, and
+  // neutralize ``javascript:`` / ``data:text/html`` URLs. Style/class/contenteditable
+  // still go because the publish pipeline owns cosmetic styling.
+  doc.body.querySelectorAll("*").forEach((node) => {
+    if (!(node instanceof Element)) return;
+    if (DANGEROUS_TAGS.has(node.tagName)) {
+      node.remove();
+      return;
+    }
+    for (const name of Array.from(node.getAttributeNames())) {
+      if (name.startsWith("on")) {
+        node.removeAttribute(name);
+        continue;
+      }
+      if (name === "style" || name === "class" || name === "contenteditable") {
+        node.removeAttribute(name);
+        continue;
+      }
+      if (name === "href" || name === "src" || name === "xlink:href") {
+        const value = (node.getAttribute(name) ?? "").trim().toLowerCase();
+        if (value.startsWith("javascript:") || value.startsWith("vbscript:") || value.startsWith("data:text/html")) {
+          node.removeAttribute(name);
+        }
+      }
+    }
   });
   return doc.body.innerHTML.trim();
 }

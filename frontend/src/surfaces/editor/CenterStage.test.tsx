@@ -532,4 +532,66 @@ describe("CenterStage", () => {
     // The cosmetic publish-pipeline envelope must not leak back into the source.
     expect(nextHtml).not.toContain('word-wrap:break-word');
   });
+
+  it("strips script tags and event handlers when a structural edit falls through the sanitizer", () => {
+    vi.useFakeTimers();
+    const onFieldChange = vi.fn();
+
+    render(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={DRAFT}
+        view="preview"
+        setView={vi.fn()}
+        tab="html"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml={PROCESSED_PREVIEW_HTML}
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    const editable = screen.getByTestId("preview-editable-content");
+    (editable as HTMLDivElement).innerHTML = [
+      '<section style="font-size:16px; line-height:1.8; color:#333;">',
+      "<p>safe paragraph</p>",
+      '<p>boom <img src="x" onerror="alert(1)"></p>',
+      '<p>link <a href="javascript:alert(2)">click</a></p>',
+      '<script>alert(3)</script>',
+      '<iframe src="https://evil.example.com"></iframe>',
+      "<p>tail</p>",
+      "</section>",
+    ].join("");
+    fireEvent.input(editable);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onFieldChange).toHaveBeenCalled();
+    const [[, merged]] = onFieldChange.mock.calls;
+
+    // Dangerous tags removed outright.
+    expect(merged).not.toContain("<script");
+    expect(merged).not.toContain("<iframe");
+    // Inline event handlers stripped, but the carrier element survives.
+    expect(merged).toContain("<img");
+    expect(merged).not.toContain("onerror");
+    // javascript: URL scrubbed off the anchor.
+    expect(merged).not.toContain("javascript:");
+    // The safe text around the malicious payload makes it through.
+    expect(merged).toContain("safe paragraph");
+    expect(merged).toContain("tail");
+  });
 });

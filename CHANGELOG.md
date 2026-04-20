@@ -28,6 +28,16 @@ All notable changes to MBEditor will be documented in this file.
 - 启动时统一 `ensure_data_directories()` 创建 images / articles / mbdocs / config.json 父目录。
 - `PUT /articles/{id}` 在 `mode=markdown` 且只收到 Markdown 时自动用 markdown renderer 同步 HTML，便于 CLI/API 调用方只传 Markdown。
 
+### Added — 文章列表删除按钮
+- 列表每行末尾新增 🗑 按钮，点击触发 `window.confirm` → `DELETE /articles/{id}`；同步清理 `currentArticleId`，删当前编辑中的文章不会留下悬挂引用。
+
+### Added — 首次启动自动 seed 五篇模板
+- backend 启动若检测到 `ARTICLES_DIR` 为空，从 `backend/app/seeds/tpl_*.json` 把五套示例模板种进去；已有内容绝不覆盖。模板同时保留在仓库根 `docs/cli/examples/templates/`，便于 dev 模式和 CLI 复用。
+
+### Security — 预览粘贴的 XSS 护栏
+- `cleanPreviewFallback` 从「只剥 style/class/contenteditable」升级为完整黑名单：`<script>/<iframe>/<object>/<embed>/<link>/<meta>/<style>/<base>/<frame>/<frameset>` 直接移除；`on*` 内联事件处理器一律 strip；`href/src/xlink:href` 中的 `javascript:` / `vbscript:` / `data:text/html` 协议一律清除。保留父元素文本和安全属性。
+- `render_markdown_source` 关闭 markdown-it 的 `html: true`，Markdown 里内嵌的 `<script>` / `<img onerror>` 一律被当作文本转义输出，不会以活 HTML 写入 `article.html`。publish 管道仍会做一遍 sanitize，但现在存储态本身也是安全的。
+
 ### Changed — 版本号
 - backend `pyproject.toml`、`APP_VERSION`、frontend `package.json`、BrandLogo、README 徽章、Settings 页面全部统一到 `5.0.0`；测试用例改用 `APP_VERSION` 常量而非硬编码字符串。
 

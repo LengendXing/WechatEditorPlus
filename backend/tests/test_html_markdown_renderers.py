@@ -42,3 +42,17 @@ def test_render_markdown_source_supports_basic_emphasis():
     assert "<strong>" in html
     assert "<em>" in html
     assert "<code>" in html
+
+
+def test_render_markdown_source_escapes_raw_html_as_text():
+    # Users in mode=markdown should never get a live <script> or on*= injected
+    # into stored article.html just by typing it in the source.
+    html = render_markdown_source(
+        '<script>alert(1)</script>\n\n<img src="x" onerror="alert(2)">\n\nPlain *text*.'
+    )
+    # Executable tags must be HTML-escaped, not passed through.
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
+    assert "onerror=\"alert(2)\"" not in html
+    # Normal markdown (inline emphasis) still works.
+    assert "<em>text</em>" in html
