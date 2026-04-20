@@ -145,7 +145,7 @@ def test_baseline_dom_shape_has_no_class_or_style_tag():
 _SKIP_REASON_AUTH = "run auth_login.py first to create .auth/state.json"
 _SKIP_REASON_ENV = (
     "set MBEDITOR_RUN_REAL_WECHAT_TESTS=1 to enable real WeChat calls "
-    "(requires valid MB 科技 credentials in data/config.json)"
+    "(requires valid WeChat 测试账号 credentials in data/config.json)"
 )
 
 # 只要其一条件不满足就 skip
@@ -156,7 +156,7 @@ _skip_reason = _SKIP_REASON_AUTH if not _AUTH_STATE_EXISTS else _SKIP_REASON_ENV
 @pytest.mark.skipif(_should_skip_wechat, reason=_skip_reason)
 @pytest.mark.xfail(
     reason=(
-        "Initial end-to-end parity run (2026-04-11, MB科技) measured "
+        "Initial end-to-end parity run (2026-04-11, WeChat 测试账号) measured "
         "diff_pct=20.96%. Renderer style constants (_HEADING_STYLES, "
         "_PARAGRAPH_STYLE) need calibration against WeChat MP backend's "
         ".rich_media_content computed CSS. See "

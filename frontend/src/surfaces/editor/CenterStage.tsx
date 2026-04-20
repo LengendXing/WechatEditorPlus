@@ -6,6 +6,7 @@ import type { EditorDraft, EditorField } from "@/types";
 import type { OutlineBlock } from "./StructurePanel";
 
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
+const PREVIEW_EDIT_DEBOUNCE_MS = 500;
 
 interface CenterStageProps {
   articleId?: string;
@@ -45,6 +46,295 @@ type PreviewResizeDirection = "width" | "height" | "both";
 
 function normalizeText(value: string) {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function normalizeEditablePreviewHtml(value: string) {
+  if (typeof DOMParser === "undefined") {
+    return value.trim();
+  }
+
+  const doc = new DOMParser().parseFromString(`<body>${value}</body>`, "text/html");
+  doc.body.querySelectorAll("[contenteditable]").forEach((node) => node.removeAttribute("contenteditable"));
+  return doc.body.innerHTML.trim();
+}
+
+function stripPreviewWrapper(doc: Document, sourceDoc?: Document) {
+  const body = doc.body;
+  const sourceChildren = sourceDoc ? semanticChildNodes(sourceDoc.body) : [];
+  const sourceHasSectionRoot = (
+    sourceChildren.length === 1 &&
+    sourceChildren[0] instanceof Element &&
+    sourceChildren[0].tagName === "SECTION"
+  );
+  if (
+    body.children.length === 1 &&
+    body.firstElementChild?.tagName === "SECTION" &&
+    (
+      body.firstElementChild.classList.contains("wechat-root") ||
+      !sourceHasSectionRoot
+    )
+  ) {
+    body.replaceChildren(...Array.from(body.firstElementChild.childNodes).map((node) => node.cloneNode(true)));
+  }
+}
+
+function semanticChildNodes(node: Node) {
+  return Array.from(node.childNodes).filter((child) => {
+    if (child.nodeType === Node.COMMENT_NODE) return false;
+    if (child.nodeType === Node.TEXT_NODE) return (child.textContent ?? "").trim().length > 0;
+    return true;
+  });
+}
+
+function nodesShareShape(sourceNode: Node, previewNode: Node): boolean {
+  if (sourceNode.nodeType !== previewNode.nodeType) return false;
+  if (sourceNode.nodeType === Node.TEXT_NODE) return true;
+  if (sourceNode.nodeType !== Node.ELEMENT_NODE) return false;
+
+  const sourceElement = sourceNode as Element;
+  const previewElement = previewNode as Element;
+  if (sourceElement.tagName !== previewElement.tagName) return false;
+
+  const sourceChildren = semanticChildNodes(sourceElement);
+  const previewChildren = semanticChildNodes(previewElement);
+  if (sourceChildren.length !== previewChildren.length) return false;
+
+  return sourceChildren.every((child, index) => nodesShareShape(child, previewChildren[index]!));
+}
+
+function copyTextContent(sourceNode: Node, previewNode: Node) {
+  if (sourceNode.nodeType === Node.TEXT_NODE && previewNode.nodeType === Node.TEXT_NODE) {
+    sourceNode.textContent = previewNode.textContent;
+    return;
+  }
+
+  if (sourceNode.nodeType !== Node.ELEMENT_NODE || previewNode.nodeType !== Node.ELEMENT_NODE) {
+    return;
+  }
+
+  const sourceChildren = semanticChildNodes(sourceNode);
+  const previewChildren = semanticChildNodes(previewNode);
+  sourceChildren.forEach((child, index) => {
+    const matchingPreviewChild = previewChildren[index];
+    if (matchingPreviewChild) copyTextContent(child, matchingPreviewChild);
+  });
+}
+
+function cleanPreviewFallback(doc: Document) {
+  doc.body.querySelectorAll("[style],[class],[contenteditable]").forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+    node.removeAttribute("style");
+    node.removeAttribute("class");
+    node.removeAttribute("contenteditable");
+  });
+  return doc.body.innerHTML.trim();
+}
+
+function mergeEditedPreviewIntoSource(sourceHtml: string, editedPreviewHtml: string) {
+  if (typeof DOMParser === "undefined") {
+    return normalizeEditablePreviewHtml(editedPreviewHtml);
+  }
+
+  const sourceDoc = new DOMParser().parseFromString(`<body>${sourceHtml}</body>`, "text/html");
+  const previewDoc = new DOMParser().parseFromString(`<body>${editedPreviewHtml}</body>`, "text/html");
+  stripPreviewWrapper(previewDoc, sourceDoc);
+
+  const sourceChildren = semanticChildNodes(sourceDoc.body);
+  const previewChildren = semanticChildNodes(previewDoc.body);
+
+  if (
+    sourceChildren.length > 0 &&
+    sourceChildren.length === previewChildren.length &&
+    sourceChildren.every((child, index) => nodesShareShape(child, previewChildren[index]!))
+  ) {
+    sourceChildren.forEach((child, index) => copyTextContent(child, previewChildren[index]!));
+    return sourceDoc.body.innerHTML.trim();
+  }
+
+  return cleanPreviewFallback(previewDoc);
+}
+
+function normalizeMarkdownText(value: string) {
+  return value.replace(/\u00A0/g, " ").replace(/\s+/g, " ");
+}
+
+function escapeMarkdownText(value: string) {
+  return normalizeMarkdownText(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/([`*_[\]])/g, "\\$1")
+    .replace(/^(#{1,6}|\>|\-|\+|\d+\.)\s/gm, "\\$&");
+}
+
+function serializeInlineMarkdown(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return escapeMarkdownText(node.textContent ?? "");
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) return "";
+
+  const element = node as HTMLElement;
+  const children = semanticChildNodes(element).map(serializeInlineMarkdown).join("");
+
+  switch (element.tagName) {
+    case "STRONG":
+    case "B":
+      return children.trim() ? `**${children.trim()}**` : "";
+    case "EM":
+    case "I":
+      return children.trim() ? `*${children.trim()}*` : "";
+    case "DEL":
+    case "S":
+      return children.trim() ? `~~${children.trim()}~~` : "";
+    case "CODE":
+      return element.parentElement?.tagName === "PRE" ? children : `\`${(element.textContent ?? "").trim()}\``;
+    case "A": {
+      const href = element.getAttribute("href") ?? "";
+      const text = children.trim() || href;
+      return href ? `[${text}](${href})` : text;
+    }
+    case "IMG": {
+      const src = element.getAttribute("src") ?? "";
+      const alt = element.getAttribute("alt") ?? "";
+      return src ? `![${alt}](${src})` : "";
+    }
+    case "BR":
+      return "  \n";
+    default:
+      return children;
+  }
+}
+
+function serializeInlineMarkdownNodes(nodes: Node[]) {
+  return nodes.map(serializeInlineMarkdown).join("").replace(/[ \t]+\n/g, "\n").trim();
+}
+
+function isBlockMarkdownElement(element: Element) {
+  return new Set([
+    "P", "DIV", "SECTION", "ARTICLE", "MAIN",
+    "H1", "H2", "H3", "H4", "H5", "H6",
+    "UL", "OL", "LI", "BLOCKQUOTE", "PRE", "HR",
+  ]).has(element.tagName);
+}
+
+function serializeListMarkdown(list: Element, indent = "", ordered = false): string {
+  const items = Array.from(list.children).filter((child): child is HTMLElement => child instanceof HTMLElement && child.tagName === "LI");
+  if (items.length === 0) return "";
+
+  const result = items.map((item, index) => {
+    const marker = ordered ? `${index + 1}. ` : "- ";
+    const inlineNodes: Node[] = [];
+    const nestedBlocks: string[] = [];
+
+    semanticChildNodes(item).forEach((child) => {
+      if (child instanceof HTMLElement && (child.tagName === "UL" || child.tagName === "OL")) {
+        nestedBlocks.push(serializeListMarkdown(child, `${indent}  `, child.tagName === "OL").trimEnd());
+        return;
+      }
+      inlineNodes.push(child);
+    });
+
+    let content = "";
+    if (inlineNodes.some((child) => child instanceof HTMLElement && isBlockMarkdownElement(child) && child.tagName !== "P")) {
+      const fragment = document.implementation.createHTMLDocument("");
+      inlineNodes.forEach((child) => fragment.body.appendChild(child.cloneNode(true)));
+      content = serializeMarkdownFromHtml(fragment.body.innerHTML).trim();
+    } else {
+      const flattened = inlineNodes.flatMap((child) => (
+        child instanceof HTMLElement && child.tagName === "P"
+          ? semanticChildNodes(child)
+          : [child]
+      ));
+      content = serializeInlineMarkdownNodes(flattened);
+    }
+
+    const lines = (content || " ").split("\n");
+    const firstLine = `${indent}${marker}${lines[0] ?? ""}`.trimEnd();
+    const continuation = lines.slice(1)
+      .map((line) => `${indent}  ${line}`.trimEnd())
+      .join("\n");
+    const nested = nestedBlocks.filter(Boolean).join("\n");
+    return [firstLine, continuation, nested].filter(Boolean).join("\n");
+  }).join("\n");
+
+  return `${result}\n\n`;
+}
+
+function serializeBlockMarkdown(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = escapeMarkdownText(node.textContent ?? "").trim();
+    return text ? `${text}\n\n` : "";
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) return "";
+
+  const element = node as HTMLElement;
+  const children = semanticChildNodes(element);
+
+  switch (element.tagName) {
+    case "SECTION":
+    case "DIV":
+    case "ARTICLE":
+    case "MAIN":
+      return children.map(serializeBlockMarkdown).join("");
+    case "H1":
+    case "H2":
+    case "H3":
+    case "H4":
+    case "H5":
+    case "H6": {
+      const level = Number(element.tagName[1]);
+      const text = serializeInlineMarkdownNodes(children);
+      return text ? `${"#".repeat(level)} ${text}\n\n` : "";
+    }
+    case "P": {
+      const text = serializeInlineMarkdownNodes(children);
+      return text ? `${text}\n\n` : "";
+    }
+    case "UL":
+      return serializeListMarkdown(element, "", false);
+    case "OL":
+      return serializeListMarkdown(element, "", true);
+    case "BLOCKQUOTE": {
+      const content = children.map(serializeBlockMarkdown).join("").trim();
+      if (!content) return "";
+      return `${content.split("\n").map((line) => (line ? `> ${line}` : ">")).join("\n")}\n\n`;
+    }
+    case "PRE": {
+      const code = element.textContent?.replace(/\n+$/, "") ?? "";
+      return code ? `\`\`\`\n${code}\n\`\`\`\n\n` : "";
+    }
+    case "HR":
+      return "---\n\n";
+    case "IMG": {
+      const src = element.getAttribute("src") ?? "";
+      const alt = element.getAttribute("alt") ?? "";
+      return src ? `![${alt}](${src})\n\n` : "";
+    }
+    default: {
+      const inline = serializeInlineMarkdownNodes(children);
+      return inline ? `${inline}\n\n` : "";
+    }
+  }
+}
+
+function serializeMarkdownFromHtml(html: string) {
+  if (typeof DOMParser === "undefined") return html.trim();
+
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  return semanticChildNodes(doc.body)
+    .map(serializeBlockMarkdown)
+    .join("")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function scrollCodeToBlock(
@@ -124,6 +414,10 @@ export default function CenterStage({
   const resetEditorPreviewScale = useUIStore((state) => state.resetEditorPreviewScale);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const previewContentRef = useRef<HTMLDivElement | null>(null);
+  const previewEditTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCommittedPreviewHtmlRef = useRef("");
+  const stalePreviewBodyRef = useRef("");
+  const pendingPreviewSyncRef = useRef(false);
   const previewResizeRef = useRef<{
     direction: PreviewResizeDirection;
     startX: number;
@@ -132,6 +426,7 @@ export default function CenterStage({
     startHeight: number;
   } | null>(null);
   const [previewResizeDirection, setPreviewResizeDirection] = useState<PreviewResizeDirection | null>(null);
+  const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const tabs = draft.mode === "markdown"
     ? ["markdown", "css", "js"]
     : ["html", "css", "js"];
@@ -154,21 +449,83 @@ export default function CenterStage({
   const lineCount = currentCode.split("\n").length;
   const visibleSource = draft.mode === "markdown" ? draft.markdown : draft.html.replace(/<[^>]*>/g, " ");
   const wordCount = visibleSource.replace(/\s+/g, "").length;
-  const previewBody = previewHtml || `
-    <div style="padding: 36px 18px; text-align: center; color: #8a7e6e; font-size: 13px; line-height: 1.8;">
-      ${previewLoading ? "正在生成预览…" : "这里会显示预览内容。"}
-    </div>
-  `;
+  const previewBody = previewError
+    ? `
+      <div style="padding: 24px 18px; border-radius: 12px; border: 1px solid rgba(193,74,58,0.24); background: rgba(193,74,58,0.08); color: #8A3B2E;">
+        ${escapeHtml(previewError)}
+      </div>
+    `
+    : previewHtml || `
+      <div style="padding: 36px 18px; text-align: center; color: #8a7e6e; font-size: 13px; line-height: 1.8;">
+        ${previewLoading ? "正在生成预览…" : "这里会显示预览内容。"}
+      </div>
+    `;
+  const previewEditingEnabled = Boolean(articleId) && !previewError && Boolean(previewHtml);
 
   const previewHint = useMemo(() => {
-    if (draft.mode === "markdown") return "Markdown 会先转成 HTML，再生成公众号预览。";
+    if (draft.mode === "markdown") return "可直接在预览里改内容，修改会同步回 Markdown 源码。";
     if (draft.js.trim()) return "JS 会保留下来，但不会出现在公众号预览和草稿里。";
-    return "预览内容已经按公众号兼容规则处理。";
-  }, [draft.js, draft.mode]);
+    return previewEditingEnabled
+      ? "可直接在预览里改文字，停顿后会自动同步回 HTML 源码。"
+      : "预览内容已经按公众号兼容规则处理。";
+  }, [draft.js, draft.mode, previewEditingEnabled]);
   const previewFrameLabel = `${editorPreviewWidth} × ${editorPreviewHeight}`;
   const previewScaleLabel = `${Math.round(editorPreviewScale * 100)}%`;
   const scaledPreviewWidth = Math.round(editorPreviewWidth * editorPreviewScale);
   const scaledPreviewHeight = Math.round(editorPreviewHeight * editorPreviewScale);
+
+  useEffect(() => {
+    const node = previewContentRef.current;
+    if (!node || isPreviewEditing) return;
+
+    const normalizedNext = normalizeEditablePreviewHtml(previewBody);
+    const normalizedCurrent = normalizeEditablePreviewHtml(node.innerHTML);
+
+    if (
+      pendingPreviewSyncRef.current &&
+      normalizedCurrent === lastCommittedPreviewHtmlRef.current &&
+      normalizedNext === stalePreviewBodyRef.current
+    ) {
+      return;
+    }
+
+    if (pendingPreviewSyncRef.current && normalizedNext !== stalePreviewBodyRef.current) {
+      pendingPreviewSyncRef.current = false;
+    }
+
+    if (normalizedCurrent === normalizedNext) {
+      lastCommittedPreviewHtmlRef.current = normalizedNext;
+      return;
+    }
+
+    node.innerHTML = previewBody;
+    lastCommittedPreviewHtmlRef.current = normalizedNext;
+  }, [isPreviewEditing, previewBody]);
+
+  useEffect(() => {
+    return () => {
+      if (previewEditTimerRef.current) {
+        clearTimeout(previewEditTimerRef.current);
+      }
+    };
+  }, []);
+
+  const commitPreviewChanges = (node: HTMLDivElement | null) => {
+    if (!node || !previewEditingEnabled) return;
+
+    const nextHtml = normalizeEditablePreviewHtml(node.innerHTML);
+    if (nextHtml === lastCommittedPreviewHtmlRef.current) return;
+
+    stalePreviewBodyRef.current = normalizeEditablePreviewHtml(previewBody);
+    pendingPreviewSyncRef.current = true;
+    lastCommittedPreviewHtmlRef.current = nextHtml;
+    const mergedHtml = mergeEditedPreviewIntoSource(draft.html, nextHtml);
+    if (draft.mode === "markdown") {
+      onFieldChange("markdown", serializeMarkdownFromHtml(mergedHtml));
+      return;
+    }
+    onFieldChange("html", mergedHtml);
+  };
 
   useEffect(() => {
     if (!previewResizeDirection) return;
@@ -598,6 +955,33 @@ export default function CenterStage({
                 )}
                 <div
                   ref={previewContentRef}
+                  data-testid="preview-editable-content"
+                  contentEditable={previewEditingEnabled}
+                  suppressContentEditableWarning
+                  onInput={(event) => {
+                    if (!previewEditingEnabled) return;
+
+                    setIsPreviewEditing(true);
+                    if (previewEditTimerRef.current) {
+                      clearTimeout(previewEditTimerRef.current);
+                    }
+
+                    const node = event.currentTarget;
+                    previewEditTimerRef.current = setTimeout(() => {
+                      commitPreviewChanges(node);
+                      setIsPreviewEditing(false);
+                    }, PREVIEW_EDIT_DEBOUNCE_MS);
+                  }}
+                  onBlur={(event) => {
+                    if (previewEditTimerRef.current) {
+                      clearTimeout(previewEditTimerRef.current);
+                      previewEditTimerRef.current = null;
+                    }
+                    commitPreviewChanges(event.currentTarget);
+                    setIsPreviewEditing(false);
+                  }}
+                  aria-label="公众号预览编辑区"
+                  aria-readonly={!previewEditingEnabled}
                   style={{
                     height: "100%",
                     padding: "28px 22px 32px",
@@ -607,24 +991,10 @@ export default function CenterStage({
                     color: "#1A1512",
                     overflow: "auto",
                     boxSizing: "border-box",
+                    outline: "none",
+                    cursor: previewEditingEnabled ? "text" : "default",
                   }}
-                >
-                  {previewError ? (
-                    <div
-                      style={{
-                        padding: "24px 18px",
-                        borderRadius: 12,
-                        border: "1px solid rgba(193,74,58,0.24)",
-                        background: "rgba(193,74,58,0.08)",
-                        color: "#8A3B2E",
-                      }}
-                    >
-                      {previewError}
-                    </div>
-                  ) : (
-                    <div dangerouslySetInnerHTML={{ __html: previewBody }} />
-                  )}
-                </div>
+                />
               </div>
               <div
                 data-testid="preview-resize-right"

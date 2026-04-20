@@ -199,7 +199,7 @@ def push_mbdoc_to_wechat_draft(doc: MBDoc) -> str:
 
     Renders the document with ``upload_images=True`` (the "push" path) and
     calls ``wechat_service.create_draft``. Requires a valid ``data/config.json``
-    with appid/appsecret configured for the MB科技 test account.
+    with appid/appsecret configured for the WeChat 测试账号 test account.
 
     Args:
         doc: document to push.
@@ -235,7 +235,7 @@ def screenshot_wechat_draft(
     Requires a prior successful run of ``auth_login.py`` which saves
     ``backend/tests/visual/.auth/state.json``.
 
-    Navigation flow (confirmed against MB科技 test account on 2026-04-11):
+    Navigation flow (confirmed against WeChat 测试账号 test account on 2026-04-11):
 
     1. Navigate to ``https://mp.weixin.qq.com/`` — server redirects to
        ``/cgi-bin/home?...&token=<TOKEN>``. Extract the token.

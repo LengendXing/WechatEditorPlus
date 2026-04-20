@@ -38,7 +38,7 @@ git log --oneline -5  # 最上面应该是 dadde2e docs(handoff): session 2 ...
 4. 用户记忆文件（自动加载）：
    - feedback_mbeditor_visual_parity.md — 唯一验收标准 = 视觉一致性
    - feedback_no_midway_checkpoints.md — 长任务一把跑完，不 checkpoint
-   - project_wechat_test_account.md — MB科技测试号，secret 在 data/config.json
+   - project_wechat_test_account.md — WeChat 测试账号，secret 在 data/config.json
 
 ## 不变量检查
 按 SESSION_HANDOFF.md §"不变量" 跑 7 条，任何一条红色 = 先修复。
@@ -111,7 +111,7 @@ git log --oneline -5  # 最上面应该是 dadde2e docs(handoff): session 2 ...
 | `backend/app/services/renderers/heading_paragraph.py` | H1-H6 + P 的最小 inline-styled renderer（session 3 可能要调样式） |
 | `backend/app/services/mbdoc_storage.py` | 文件存储 |
 | `backend/app/api/v1/mbdoc.py` | REST 端点 |
-| `data/config.json` | MB科技测试号凭证（**gitignored**） |
+| `data/config.json` | WeChat 测试账号凭证（**gitignored**） |
 | `skill/mbeditor.skill.md` | MBDoc 章节已加 |
 
 ## ⚠️ 给 session 3 的提醒

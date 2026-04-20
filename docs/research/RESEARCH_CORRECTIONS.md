@@ -8,7 +8,7 @@ not rewrite — the original research reports in the same directory.
 
 ## 2026-04-11 — Stage 1 / Task 11 end-to-end visual parity baseline
 
-**Context:** First real-device run of `backend/tests/visual/test_baseline.py::test_baseline_wechat_parity` against the MB 科技 test
+**Context:** First real-device run of `backend/tests/visual/test_baseline.py::test_baseline_wechat_parity` against the WeChat 测试账号 test
 public account.
 
 **Setup:**

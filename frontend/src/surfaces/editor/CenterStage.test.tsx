@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CenterStage from "./CenterStage";
 import { useUIStore } from "@/stores/uiStore";
@@ -26,9 +26,16 @@ const NAVIGATION_BLOCK: OutlineBlock = {
   sourceLine: 3,
 };
 
+const PROCESSED_PREVIEW_HTML = [
+  '<section style="font-size:16px; line-height:1.8; color:#333;">',
+  '<p style="margin:0; color:#333;">Hello preview</p>',
+  "</section>",
+].join("");
+
 describe("CenterStage", () => {
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   beforeEach(() => {
@@ -208,5 +215,245 @@ describe("CenterStage", () => {
     );
 
     expect(scrollIntoView).toHaveBeenCalled();
+  });
+
+  it("lets users edit preview content and sync it back to html source", () => {
+    vi.useFakeTimers();
+    const onFieldChange = vi.fn();
+
+    const { rerender } = render(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={DRAFT}
+        view="preview"
+        setView={vi.fn()}
+        tab="html"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml={PROCESSED_PREVIEW_HTML}
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    const editable = screen.getByTestId("preview-editable-content");
+    expect(editable).toHaveAttribute("contenteditable", "true");
+
+    (editable as HTMLDivElement).innerHTML = [
+      '<section style="font-size:16px; line-height:1.8; color:#333;">',
+      '<p style="margin:0; color:#333;">Edited preview</p>',
+      "</section>",
+    ].join("");
+    fireEvent.input(editable);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onFieldChange).toHaveBeenCalledWith("html", "<p>Edited preview</p>");
+    expect(editable.innerHTML).toContain("Edited preview");
+
+    rerender(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={DRAFT}
+        view="preview"
+        setView={vi.fn()}
+        tab="html"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml={[
+          '<section style="font-size:16px; line-height:1.8; color:#333;">',
+          '<p style="margin:0; color:#333;">Edited preview</p>',
+          "</section>",
+        ].join("")}
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId("preview-editable-content").innerHTML).toContain("Edited preview");
+  });
+
+  it("lets markdown preview edits sync back into markdown source", () => {
+    vi.useFakeTimers();
+    const onFieldChange = vi.fn();
+
+    render(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={{
+          ...DRAFT,
+          mode: "markdown",
+          html: "<h1>Hello preview</h1><p>正文</p>",
+          markdown: "# Hello preview\n\n正文",
+        }}
+        view="preview"
+        setView={vi.fn()}
+        tab="markdown"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml="<h1>Hello preview</h1>"
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    const editable = screen.getByTestId("preview-editable-content");
+    expect(editable).toHaveAttribute("contenteditable", "true");
+
+    (editable as HTMLDivElement).innerHTML = [
+      '<section style="font-size:16px; line-height:1.8; color:#333;">',
+      "<h1>Hello preview</h1>",
+      '<p style="margin:0; color:#333;">已更新正文</p>',
+      "</section>",
+    ].join("");
+    fireEvent.input(editable);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onFieldChange).toHaveBeenCalledWith("markdown", "# Hello preview\n\n已更新正文");
+  });
+
+  it("keeps structural edits clean when preview adds a new paragraph", () => {
+    vi.useFakeTimers();
+    const onFieldChange = vi.fn();
+
+    render(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={{
+          ...DRAFT,
+          html: "<h2>H</h2><p>P</p>",
+        }}
+        view="preview"
+        setView={vi.fn()}
+        tab="html"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml={[
+          '<section style="font-size:16px; line-height:1.8; color:#333;">',
+          "<h2>H</h2>",
+          '<p style="margin:0; color:#333;">P</p>',
+          "</section>",
+        ].join("")}
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    const editable = screen.getByTestId("preview-editable-content");
+    (editable as HTMLDivElement).innerHTML = [
+      '<section style="font-size:16px; line-height:1.8; color:#333;">',
+      "<h2>H</h2>",
+      '<p style="margin:0; color:#333;">P</p>',
+      '<p style="margin:0; color:#333;">NEXT</p>',
+      "</section>",
+    ].join("");
+    fireEvent.input(editable);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onFieldChange).toHaveBeenCalledWith("html", "<h2>H</h2><p>P</p><p>NEXT</p>");
+  });
+
+  it("keeps structural edits clean when markdown preview adds a new paragraph", () => {
+    vi.useFakeTimers();
+    const onFieldChange = vi.fn();
+
+    render(
+      <CenterStage
+        articleId="draft-1"
+        canGoBack
+        draft={{
+          ...DRAFT,
+          mode: "markdown",
+          html: "<h1>标题</h1><p>正文第一段。</p>",
+          markdown: "# 标题\n\n正文第一段。",
+        }}
+        view="preview"
+        setView={vi.fn()}
+        tab="markdown"
+        setTab={vi.fn()}
+        saveState="saved"
+        selected="body"
+        navigationRequest={null}
+        previewHtml={[
+          '<section style="font-size:16px; line-height:1.8; color:#333;">',
+          "<h1>标题</h1>",
+          '<p style="margin:0; color:#333;">正文第一段。</p>',
+          "</section>",
+        ].join("")}
+        previewLoading={false}
+        previewError={null}
+        publishing={false}
+        copying={false}
+        onBack={vi.fn()}
+        onFieldChange={onFieldChange}
+        onRefreshPreview={vi.fn()}
+        onCopyRichText={vi.fn()}
+        onPublish={vi.fn()}
+      />
+    );
+
+    const editable = screen.getByTestId("preview-editable-content");
+    (editable as HTMLDivElement).innerHTML = [
+      '<section style="font-size:16px; line-height:1.8; color:#333;">',
+      "<h1>标题</h1>",
+      '<p style="margin:0; color:#333;">正文第一段。</p>',
+      '<p style="margin:0; color:#333;">新增一段。</p>',
+      "</section>",
+    ].join("");
+    fireEvent.input(editable);
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(onFieldChange).toHaveBeenCalledWith("markdown", "# 标题\n\n正文第一段。\n\n新增一段。");
   });
 });

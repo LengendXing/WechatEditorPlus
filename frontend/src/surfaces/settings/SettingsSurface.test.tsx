@@ -39,7 +39,7 @@ describe("SettingsSurface", () => {
         return Promise.resolve({ data: { code: 0, data: { appid: "", appsecret: "", configured: false } } });
       }
       if (url === "/version") {
-        return Promise.resolve({ data: { code: 0, data: { version: "4.1.0", repo: "AAAAAnson/mbeditor" } } });
+        return Promise.resolve({ data: { code: 0, data: { version: "5.0.0", repo: "AAAAAnson/mbeditor" } } });
       }
       return Promise.reject(new Error(`unexpected GET ${url}`));
     });

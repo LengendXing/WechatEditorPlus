@@ -36,7 +36,7 @@ python tests/visual/auth_login.py
 ```
 
 A headed Chromium window will open the WeChat MP login page. Scan the QR code
-with the MB科技 test account WeChat app, wait for the dashboard to load, then
+with the WeChat 测试账号 test account WeChat app, wait for the dashboard to load, then
 press Enter in the terminal. The session is saved to `.auth/state.json`.
 
 ## Running tests

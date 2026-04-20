@@ -27,7 +27,7 @@ export default function BrandLogo({ size = 18, showTag = true }: BrandLogoProps)
             textTransform: "uppercase",
           }}
         >
-          v3 &middot; AGENT
+          v5 &middot; AGENT
         </span>
       )}
     </div>

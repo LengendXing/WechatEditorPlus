@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from app.services.block_registry import RenderContext
 
 
-# Calibration baseline (2026-04-11, MB科技 test account):
+# Calibration baseline (2026-04-11, WeChat 测试账号 test account):
 # Dumped computed styles from WeChat MP backend .rich_media_content via
 # tests/visual/dump_wechat_computed_styles.py. Findings:
 #  1. h1-h6/p inline styles survive WeChat's sanitizer unchanged
@@ -62,7 +62,7 @@ _PARAGRAPH_STYLE = (
 # changes how text-align:justify and letter-spacing distribute sub-pixel
 # spacing across the line. Without the span wrapper the editor renders
 # justified lines with measurably different per-character offsets from
-# the WeChat draft (verified 2026-04-11 against MB科技 test account).
+# the WeChat draft (verified 2026-04-11 against WeChat 测试账号 test account).
 # Emitting the span here makes the parity HTML structurally identical to
 # what ProseMirror would have produced anyway.
 _LEAF_OPEN = '<span leaf="">'

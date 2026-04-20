@@ -142,7 +142,7 @@ Task 10 基础设施已就位，Stage 2 可以用 `diff_images` 做 "render HTML
 **Stage 1 处于"端到端管线完成，样式数值校准未达标"的中间态。**
 
 本 session 已完成：
-- ✅ 用户扫码登录 MB 科技（`.auth/state.json` 已保存）
+- ✅ 用户扫码登录 WeChat 测试账号（`.auth/state.json` 已保存）
 - ✅ `screenshot_wechat_draft` 完整重写：navigate → token extract → drafts list → 按 title_hint 匹配卡片 → 点编辑图标 → popup → 截 `.rich_media_content`
 - ✅ `render_mbdoc_to_screenshot` 加 `width` + `flush` kwargs，支持 parity 模式
 - ✅ 端到端跑通：push draft → 截图 → diff，当前 baseline **diff_pct = 20.96%**
@@ -187,6 +187,6 @@ Task 10 基础设施已就位，Stage 2 可以用 `diff_images` 做 "render HTML
 | 日期 | Session | 事件 |
 |---|---|---|
 | 2026-04-11 | #1 | Stage 0 启动并完成。14 commit 已 push。创建多 session 协调框架。|
-| 2026-04-11 | #2 | Stage 1 后端完成（Task 1-9）：MBDoc schema + BlockRegistry + render_for_wechat + /api/v1/mbdoc CRUD + skill 更新。两阶段 review 协议，8 个 feature commit + 1 个 fix commit（path traversal / src scheme / 唯一性 validator）+ merge commit。79 后端测试全绿，7 前端测试全绿，build 绿。Task 10（Playwright 视觉一致性基础设施）和 Task 11（baseline 视觉测试）留给下一个 session。用户提供 MB科技测试公众号凭证（存 data/config.json，gitignored）。**本地合并到 main，未 push。**|
+| 2026-04-11 | #2 | Stage 1 后端完成（Task 1-9）：MBDoc schema + BlockRegistry + render_for_wechat + /api/v1/mbdoc CRUD + skill 更新。两阶段 review 协议，8 个 feature commit + 1 个 fix commit（path traversal / src scheme / 唯一性 validator）+ merge commit。79 后端测试全绿，7 前端测试全绿，build 绿。Task 10（Playwright 视觉一致性基础设施）和 Task 11（baseline 视觉测试）留给下一个 session。用户提供 WeChat 测试账号测试公众号凭证（存 data/config.json，gitignored）。**本地合并到 main，未 push。**|
 | 2026-04-11 | #3 | Task 10 + Task 11 完成。4 commit（`a1bd79f`、`7142970`、`e0917ed`、`4077fc3`）本地已提交、未 push。`backend/tests/visual/` 完整：infrastructure.py 的 5 个 helper + auth_login.py + 6 smoke test + 3 baseline test + README。87 passed + 1 skipped。两阶段 review（spec + quality）全过，两轮 fix 分别修复 session 过期判断/浏览器清理/determinism 断言/draft selector TODO 文档化。`_DRAFT_PREVIEW_SELECTOR = None` 是已知 stub，需要下个 session 用户扫码登录后用 playwright codegen 解除。真机 diff_pct 数值尚未跑过。|
-| 2026-04-11 | #3b | 远程控制 session：用户扫码登录 MB 科技，Playwright 探索找到正确的 draft 导航路径（home→token→drafts list→hover card→click edit icon→popup→`.rich_media_content`）。commit `1f1b4ba`：重写 `screenshot_wechat_draft` 走真实路径、`render_mbdoc_to_screenshot` 加 width/flush 参数、`test_baseline_wechat_parity` 加 xfail 标记、新增 `docs/research/RESEARCH_CORRECTIONS.md`。端到端 parity pipeline 首次成功跑完：baseline diff_pct=20.96%（heading margin 和 H1 font-size 是主要差异源），留作后续校准起点。87 passed + 1 skipped；`MBEDITOR_RUN_REAL_WECHAT_TESTS=1` 时 2 passed + 1 xfailed。|
+| 2026-04-11 | #3b | 远程控制 session：用户扫码登录 WeChat 测试账号，Playwright 探索找到正确的 draft 导航路径（home→token→drafts list→hover card→click edit icon→popup→`.rich_media_content`）。commit `1f1b4ba`：重写 `screenshot_wechat_draft` 走真实路径、`render_mbdoc_to_screenshot` 加 width/flush 参数、`test_baseline_wechat_parity` 加 xfail 标记、新增 `docs/research/RESEARCH_CORRECTIONS.md`。端到端 parity pipeline 首次成功跑完：baseline diff_pct=20.96%（heading margin 和 H1 font-size 是主要差异源），留作后续校准起点。87 passed + 1 skipped；`MBEDITOR_RUN_REAL_WECHAT_TESTS=1` 时 2 passed + 1 xfailed。|

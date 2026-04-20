@@ -10,7 +10,7 @@ Run this script once before executing any test in ``tests/visual/`` that calls
     python tests/visual/auth_login.py
 
 A headed Chromium window will open the WeChat MP login page. Scan the QR code
-with your WeChat app (MB科技 account). After the dashboard loads, press
+with your WeChat app (WeChat 测试账号 account). After the dashboard loads, press
 Enter in this terminal to save the session and close the browser.
 
 The session is persisted to:
@@ -34,7 +34,7 @@ def main() -> None:
     print("=" * 60)
     print()
     print("正在打开微信公众号后台登录页面...")
-    print("请用 MB科技 测试账号扫描二维码登录。")
+    print("请用 WeChat 测试账号扫描二维码登录。")
     print()
 
     with sync_playwright() as pw:

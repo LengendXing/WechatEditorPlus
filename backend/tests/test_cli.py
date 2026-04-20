@@ -18,6 +18,7 @@ import pytest
 from typer.testing import CliRunner
 
 from app.cli.main import app
+from app.core.config import APP_VERSION
 
 
 runner = CliRunner()
@@ -83,7 +84,7 @@ def test_info_reports_direct_mode_and_data_paths(data_dir):
     assert payload["ok"] is True
     assert payload["action"] == "info"
     assert payload["data"]["mode"] == "direct"
-    assert payload["data"]["version"] == "4.0.0"
+    assert payload["data"]["version"] == APP_VERSION
     for key in ("articles", "mbdocs", "images", "config"):
         assert str(data_dir) in payload["data"]["paths"][key]
 
@@ -91,7 +92,7 @@ def test_info_reports_direct_mode_and_data_paths(data_dir):
 def test_info_version_subcommand(data_dir):
     result = _invoke(data_dir, "info", "version")
     assert result.exit_code == 0
-    assert _parse(result)["data"] == {"version": "4.0.0"}
+    assert _parse(result)["data"] == {"version": APP_VERSION}
 
 
 def test_info_paths_subcommand(data_dir):

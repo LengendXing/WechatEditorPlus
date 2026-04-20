@@ -19,10 +19,19 @@ logger = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
+def ensure_data_directories() -> None:
+    for path in (
+        Path(settings.IMAGES_DIR),
+        Path(settings.ARTICLES_DIR),
+        Path(settings.MBDOCS_DIR),
+        Path(settings.CONFIG_FILE).parent,
+    ):
+        path.mkdir(parents=True, exist_ok=True)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Path(settings.IMAGES_DIR).mkdir(parents=True, exist_ok=True)
-    Path(settings.ARTICLES_DIR).mkdir(parents=True, exist_ok=True)
+    ensure_data_directories()
     logger.info("Data directories ensured.")
     yield
     logger.info("Application shutdown complete.")
@@ -53,7 +62,7 @@ async def check_upload_size(request: Request, call_next):
     return await call_next(request)
 
 
-Path(settings.IMAGES_DIR).mkdir(parents=True, exist_ok=True)
+ensure_data_directories()
 app.mount("/images", StaticFiles(directory=settings.IMAGES_DIR), name="images")
 
 app.include_router(api_router)

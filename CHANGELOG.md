@@ -2,10 +2,39 @@
 
 All notable changes to MBEditor will be documented in this file.
 
+## [5.0.0] - 2026-04-20
+
+### Added — 编辑器所见即所得
+- 预览区现在是可编辑的 `contentEditable` 画布：直接在预览里改文字，500ms 去抖后自动回写到 HTML/Markdown 源码。形状一致时只拷贝文本节点，保留源码结构；形状漂移走 sanitizer 兜底。
+- HTML→Markdown 序列化器覆盖标题/段落/嵌套列表/引用/代码块/分隔线/图片/inline 强调/链接，Markdown 模式的预览编辑能无损回写。
+- 预览框支持拖拽调整宽/高/右下角，以及 40%–200% 独立缩放滑杆；尺寸和缩放分别持久化到 `uiStore`。
+
+### Added — 五套示例模板 + 一键复制富文本
+- 内置 `极简商务 / 科技霓虹 / 活力撞色 / 文艺手札 / 杂志专栏` 五种风格示例文章，全部 100% 微信 sanitizer 白名单内联样式。
+- 恢复并增强了一键复制富文本按钮，复制结果与预览完全一致，粘贴到公众号后台 0 样式损失。
+
+### Added — 编辑器导航与结构面板
+- 左侧 StructurePanel 列出标题/图片大纲，点击节点自动跳到对应位置并在预览和编辑器中同步高亮。
+- 编辑器头部新增「返回上一页 / 返回稿库」回退按钮，保留未保存草稿。
+
+### Changed — UI 与体验大改
+- 前端重做：`walnut / paper / swiss` 三主题 + 三种布局（focus / split / triptych）。
+- 去掉了产品里暴露的 Agent Console（保留为 marketing 素材，不进打包）。
+- 非关键英文 UI 文案改成中文（导航、按钮、状态芯片）。
+- 关闭自动保存时保留草稿，切换文章不清空未保存内容。
+
+### Changed — 后端
+- 数据目录自动探测：检测到 `docker-compose.yml` 走仓库根 `data/`，否则落 `backend/data/`，写死的 `/app/data` 去掉。
+- 启动时统一 `ensure_data_directories()` 创建 images / articles / mbdocs / config.json 父目录。
+- `PUT /articles/{id}` 在 `mode=markdown` 且只收到 Markdown 时自动用 markdown renderer 同步 HTML，便于 CLI/API 调用方只传 Markdown。
+
+### Changed — 版本号
+- backend `pyproject.toml`、`APP_VERSION`、frontend `package.json`、BrandLogo、README 徽章、Settings 页面全部统一到 `5.0.0`；测试用例改用 `APP_VERSION` 常量而非硬编码字符串。
+
 ## [4.0.0] - 2026-04-12
 
 ### Added — WeChat publish pipeline hardening
-在 MB 科技测试公众号端到端验证了一篇 600 行的复杂动画 HTML（`printmaster_wechat_animated.html`，含 hero、SVG 插画、grid 布局、scroll-reveal 动画、CTA 按钮），草稿高度还原度达 **0.37%**。修复了四个会让复杂 HTML 在微信草稿视图悄悄破坏的 pre-publish 陷阱：
+在 WeChat 测试账号端到端验证了一篇 600 行的复杂动画 HTML（`printmaster_wechat_animated.html`，含 hero、SVG 插画、grid 布局、scroll-reveal 动画、CTA 按钮），草稿高度还原度达 **0.37%**。修复了四个会让复杂 HTML 在微信草稿视图悄悄破坏的 pre-publish 陷阱：
 
 - **`opacity:0` → `opacity:1` 重写**。依赖 JS `IntersectionObserver` 的 `.reveal` / scroll-reveal 模式默认隐藏所有内容。微信禁 JS，这些元素会永远看不见。
 - **`transform:translate*(...)` → `transform:none` 重写**。同 scroll-reveal 模式用 translateY 把内容推到下方等 JS 拉回来。没 JS 就是永远偏移。

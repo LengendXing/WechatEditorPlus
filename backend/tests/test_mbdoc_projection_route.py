@@ -21,9 +21,9 @@ def test_project_article_to_mbdoc_returns_projected_doc(monkeypatch):
     response = asyncio.run(mbdoc_api.project_article_to_mbdoc("a1", persist=False))
     assert response["data"]["id"] == "a1"
     assert response["data"]["meta"]["title"] == "Projected"
-    assert response["data"]["blocks"][0]["type"] == "html"
+    assert response["data"]["blocks"][0]["type"] == "paragraph"
     assert response["data"]["projection"]["editability"] == "reversible"
-    assert response["data"]["projection"]["editableBlockIds"] == ["content_html"]
+    assert response["data"]["projection"]["editableBlockIds"] == ["content_paragraph_1"]
 
 
 def test_project_article_to_mbdoc_persists_when_requested(monkeypatch):

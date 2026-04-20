@@ -55,3 +55,14 @@ backend/tests/visual/_artifacts/
 .claude/
 .omx/
 data/mbdocs/
+memory/
+
+# Local scratch dropped at repo root (zipped exports, screenshots, design handoffs)
+/MBEditor/
+/MBEditor.zip
+/mbeditor-*.png
+/mbeditor-*.jpeg
+/editor-*.png
+/editor-*.jpeg
+/preview-*.png
+/preview-*.jpeg

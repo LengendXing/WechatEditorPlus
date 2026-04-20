@@ -140,7 +140,7 @@ def test_publish_adapter_process_html_for_copy_requires_config(monkeypatch):
     with pytest.raises(Exception) as exc_info:
         publish_adapter.process_html_for_copy("<p>Hello</p>", "")
 
-    assert "not configured" in str(exc_info.value)
+    assert "AppID/AppSecret" in str(exc_info.value)
 
 
 def test_publish_adapter_process_html_for_copy_uses_shared_pipeline(monkeypatch):
